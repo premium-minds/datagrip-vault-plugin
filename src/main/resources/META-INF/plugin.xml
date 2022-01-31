@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>com.premiumminds.datagripvaultplugin</id>
     <name>Datagrip-Vault</name>
-    <vendor>Premium Minds</vendor>
+    <vendor>premium-minds</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.database</depends>
