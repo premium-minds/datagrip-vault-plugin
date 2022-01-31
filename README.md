@@ -27,3 +27,6 @@ The **recommended** way to use this plugin is with a [Vault Agent](https://www.v
   Download the [latest release](https://github.com/premium-minds/datagrip-vault-plugin/releases/latest) and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
+## Screenshots
+
+![datagrip-vault-plugin.png](./screenshots/datagrip-vault-plugin.png)
