@@ -99,6 +99,11 @@ tasks {
         systemProperty("jb.consents.confirmation.enabled", "false")
     }
 
+    /*runIde {
+        ideDir.set(file("/snap/datagrip/current/"))
+        jvmArgs?.add("-Didea.platform.prefix=DataGrip")
+    }*/
+
     signPlugin {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))
