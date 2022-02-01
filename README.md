@@ -35,7 +35,7 @@ The **recommended** way to use this plugin is with a [Vault Agent](https://www.v
 
 This plugin will request new credentials everytime a connection is open to the database. To re-use already existing and valid credentials a Vault Agent is recommended.   
 
-This is an example, with [AWS Authenticaton](https://www.vaultproject.io/docs/auth/aws). Save it as `vault-agent-dbeaver.hcl` and edit accordingly:
+This is an example, with [AWS Authenticaton](https://www.vaultproject.io/docs/auth/aws). Save it as `vault-agent-datagrip.hcl` and edit accordingly:
 ```hcl
 auto_auth {
     method "aws" {
@@ -50,7 +50,7 @@ auto_auth {
 
     sink "file" {
         config = {
-            path = "/opt/vault/vault-token-dbeaver"
+            path = "/opt/vault/vault-token-datagrip"
         }
     }
 }
@@ -69,27 +69,27 @@ listener "tcp" {
 }
 ```
 
-Launch the Vault Agent with `vault agent -log-level=debug -config vault-agent-dbeaver.hcl`. 
+Launch the Vault Agent with `vault agent -log-level=debug -config vault-agent-datagrip.hcl`. 
 
-Configure a DBeaver database connection with:
+Configure a DataGrip database connection with:
  * `Address: 127.0.0.1:8101`
- * `Token file: /opt/vault/vault-token-dbeaver`
+ * `Token file: /opt/vault/vault-token-datagrip`
 
 ### Launching Vault Agent automatically
 
-To skip launching the Vault Agent manualy, you can configure your system manager to launch it on startup. For `systemd` create a `/etc/systemd/system/vault-agent-dbeaver.service` with:
+To skip launching the Vault Agent manualy, you can configure your system manager to launch it on startup. For `systemd` create a `/etc/systemd/system/vault-agent-datagrip.service` with:
 ```desktop
 [Unit]
-Description="Vault Agent to serve Tokens - DBeaver"
+Description="Vault Agent to serve Tokens - DataGrip"
 
 [Service]
 User=froque
 WorkingDirectory=/opt/vault
-ExecStart=/usr/bin/vault agent -config=/opt/vault-agent-dbeaver.hcl
+ExecStart=/usr/bin/vault agent -config=/opt/vault-agent-datagrip.hcl
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Launch the Vault Agent with `sudo systemctl start vault-agent-dbeaver`.
+Launch the Vault Agent with `sudo systemctl start vault-agent-datagrip`.
