@@ -77,7 +77,7 @@ Configure a DataGrip database connection with:
 
 ### Launching Vault Agent automatically
 
-To skip launching the Vault Agent manualy, you can configure your system manager to launch it on startup. For `systemd` create a `/etc/systemd/system/vault-agent-datagrip.service` with:
+To skip launching the Vault Agent manually, you can configure your system manager to launch it on startup. For `systemd` create a `/etc/systemd/system/vault-agent-datagrip.service` with:
 ```desktop
 [Unit]
 Description="Vault Agent to serve Tokens - DataGrip"
