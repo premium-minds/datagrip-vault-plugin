@@ -6,7 +6,7 @@
 
 <!-- Plugin description -->
 
-This plugins provides database credentials using [Vault dynamic secrets](https://www.vaultproject.io/docs/secrets/databases). 
+This plugin provides database credentials using [Vault dynamic secrets](https://www.vaultproject.io/docs/secrets/databases). 
 
 Vault login is not handled by this plugin. 
 
