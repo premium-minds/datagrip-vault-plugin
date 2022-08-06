@@ -17,7 +17,8 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.intellij.database.access.DatabaseCredentials;
 import com.intellij.database.dataSource.DatabaseAuthProvider;
-import com.intellij.database.dataSource.LocalDataSource;
+import com.intellij.database.dataSource.DatabaseConnectionConfig;
+import com.intellij.database.dataSource.DatabaseConnectionPoint;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
@@ -51,15 +52,15 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     }
 
     @Override
-    public boolean isApplicable(@NotNull LocalDataSource localDataSource) {
-        return true;
+    public ApplicabilityLevel.@NotNull Result getApplicability(@NotNull DatabaseConnectionPoint point, @NotNull ApplicabilityLevel level) {
+        return ApplicabilityLevel.Result.APPLICABLE;
     }
 
     @Override
     public @Nullable CompletionStage<@NotNull ProtoConnection> intercept(@NotNull ProtoConnection protoConnection, boolean b) {
 
-        final var address = protoConnection.getConnectionPoint().getAdditionalJdbcProperties().get(PROP_ADDRESS);
-        final var secret = protoConnection.getConnectionPoint().getAdditionalJdbcProperties().get(PROP_SECRET);
+        final var address = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_ADDRESS);
+        final var secret = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_SECRET);
 
         final var uri = URI.create(address).resolve("/v1/").resolve(secret);
 
@@ -95,13 +96,13 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     }
 
     @Override
-    public @Nullable AuthWidget createWidget(@Nullable Project project, @NotNull DatabaseCredentials credentials, @NotNull LocalDataSource dataSource) {
+    public @Nullable AuthWidget createWidget(@Nullable Project project, @NotNull DatabaseCredentials credentials, @NotNull DatabaseConnectionConfig config) {
         return new VaultWidget();
     }
 
     private String getTokenFilePath(ProtoConnection protoConnection) throws IOException {
         Path path;
-        final var tokenFile = protoConnection.getConnectionPoint().getAdditionalJdbcProperties().get(PROP_TOKEN_FILE);
+        final var tokenFile = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_TOKEN_FILE);
         if (tokenFile != null && !tokenFile.isBlank()) {
             path = Paths.get(tokenFile);
         } else {

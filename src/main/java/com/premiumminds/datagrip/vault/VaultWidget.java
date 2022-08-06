@@ -4,7 +4,8 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import com.intellij.database.dataSource.DatabaseAuthProvider;
-import com.intellij.database.dataSource.LocalDataSource;
+import com.intellij.database.dataSource.DatabaseConnectionConfig;
+import com.intellij.database.dataSource.DatabaseConnectionPoint;
 import com.intellij.database.dataSource.url.template.MutableParametersHolder;
 import com.intellij.database.dataSource.url.template.ParametersHolder;
 import com.intellij.ui.components.JBLabel;
@@ -54,17 +55,22 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
     }
 
     @Override
-    public void save(@NotNull LocalDataSource localDataSource, boolean b) {
-        localDataSource.getAdditionalJdbcProperties().put(PROP_SECRET, secretText.getText());
-        localDataSource.getAdditionalJdbcProperties().put(PROP_ADDRESS, addressText.getText());
-        localDataSource.getAdditionalJdbcProperties().put(PROP_TOKEN_FILE, tokenFileText.getText());
+    public void save(@NotNull final DatabaseConnectionConfig config, final boolean copyCredentials) {
+        config.setAdditionalProperty(PROP_SECRET, secretText.getText());
+        config.setAdditionalProperty(PROP_ADDRESS, addressText.getText());
+        config.setAdditionalProperty(PROP_TOKEN_FILE, tokenFileText.getText());
     }
 
     @Override
-    public void reset(@NotNull LocalDataSource localDataSource, boolean b) {
-        secretText.setText(localDataSource.getAdditionalJdbcProperties().get(PROP_SECRET));
-        addressText.setText(localDataSource.getAdditionalJdbcProperties().get(PROP_ADDRESS));
-        tokenFileText.setText(localDataSource.getAdditionalJdbcProperties().get(PROP_TOKEN_FILE));
+    public void reset(@NotNull final DatabaseConnectionPoint point, final boolean resetCredentials) {
+        secretText.setText(point.getAdditionalProperty(PROP_SECRET));
+        addressText.setText(point.getAdditionalProperty(PROP_ADDRESS));
+        tokenFileText.setText(point.getAdditionalProperty(PROP_TOKEN_FILE));
+    }
+
+    @Override
+    public void onChanged(@NotNull final Runnable runnable) {
+
     }
 
     @Override
