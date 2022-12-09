@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+ * [Removes Datagrip upper bound limit](https://github.com/premium-minds/datagrip-vault-plugin/commit/41b818116c77dc00ae22b9922dc7f926912440fc)
+
 ## [1.0.1]
 ### Fixed
 - [Plugin 'Datagrip-Vault' (version '1.0.0') is not compatible with the current version of the IDE, because it requires build 221.* or newer but the current build is DB-221.5787.39](https://github.com/premium-minds/datagrip-vault-plugin/issues/4)
