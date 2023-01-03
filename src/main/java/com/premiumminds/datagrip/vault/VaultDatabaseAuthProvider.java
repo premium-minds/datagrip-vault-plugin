@@ -35,6 +35,10 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     public static final String PROP_SECRET = "vault_secret";
     public static final String PROP_ADDRESS = "vault_address";
     public static final String PROP_TOKEN_FILE = "vault_token_file";
+    private static final String VAULT_AGENT_ADDR = "VAULT_AGENT_ADDR";
+    private static final String VAULT_ADDR = "VAULT_ADDR";
+    private static final String ERROR_VAULT_ADDRESS_NOT_DEFINED = "Vault address not defined";
+    private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
@@ -59,13 +63,15 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nullable CompletionStage<@NotNull ProtoConnection> intercept(@NotNull ProtoConnection protoConnection, boolean b) {
 
-        final var address = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_ADDRESS);
-        final var secret = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_SECRET);
-
-        final var uri = URI.create(address).resolve("/v1/").resolve(secret);
-
         try {
+            final var address = getAddress(protoConnection);
+            final var secret = getSecret(protoConnection);
             final var token = getTokenFilePath(protoConnection);
+
+            logger.info("Address used: " + address);
+            logger.info("Secret used: " + secret);
+
+            final var uri = URI.create(address).resolve("/v1/").resolve(secret);
 
             final var request = HttpRequest.newBuilder()
                     .GET()
@@ -76,7 +82,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-                throw new RuntimeException(response.body());
+                throw new RuntimeException("Problem connecting to Vault: " + response.body());
             } else {
                 final var gson = new GsonBuilder()
                         .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -89,7 +95,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
                 protoConnection.getConnectionProperties().put("password", secretResponse.getData().getPassword());
             }
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
         }
 
         return CompletableFuture.completedFuture(protoConnection);
@@ -109,5 +115,30 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             path = Paths.get(System.getProperty("user.home"), DEFAULT_VAULT_TOKEN_FILE);
         }
         return Files.readAllLines(path).get(0);
+    }
+
+    private String getAddress(ProtoConnection protoConnection) {
+        final var definedAddress = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_ADDRESS);
+        if (definedAddress != null && !definedAddress.isBlank()) {
+            return definedAddress;
+        } else {
+            final String vaultAgentAddrEnv = System.getenv(VAULT_AGENT_ADDR);
+            if (vaultAgentAddrEnv != null && !vaultAgentAddrEnv.isBlank()){
+                return vaultAgentAddrEnv;
+            }
+            final String vaultAddrEnv = System.getenv(VAULT_ADDR);
+            if (vaultAddrEnv != null && !vaultAddrEnv.isBlank()){
+                return vaultAddrEnv;
+            }
+        }
+        throw new RuntimeException(ERROR_VAULT_ADDRESS_NOT_DEFINED);
+    }
+
+    private String getSecret(ProtoConnection protoConnection) {
+        final var secret = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_SECRET);
+        if (secret != null && !secret.isBlank()) {
+            return secret;
+        }
+        throw new RuntimeException(ERROR_VAULT_SECRET_NOT_DEFINED);
     }
 }
