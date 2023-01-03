@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [1.2.0]
+### Added
+ * [Adds support for Vault address environment variables](https://github.com/premium-minds/datagrip-vault-plugin/pull/9)
+ * [Adds support for Vault token helper](https://github.com/premium-minds/datagrip-vault-plugin/pull/11)
+
 ## [1.1.0]
 ### Changed
 
