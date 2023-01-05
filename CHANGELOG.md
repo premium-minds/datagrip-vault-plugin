@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+## [1.2.1]
+- [Use Try-with-resources for .vault file](https://github.com/premium-minds/datagrip-vault-plugin/commit/f7ea6c7e5e02a0453c948573b9629a05eeaa0ded)
+
 ## [1.2.0]
 ### Added
 - [Adds support for Vault address environment variables](https://github.com/premium-minds/datagrip-vault-plugin/pull/9)
