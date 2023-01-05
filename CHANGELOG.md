@@ -6,13 +6,12 @@
 
 ## [1.2.0]
 ### Added
- * [Adds support for Vault address environment variables](https://github.com/premium-minds/datagrip-vault-plugin/pull/9)
- * [Adds support for Vault token helper](https://github.com/premium-minds/datagrip-vault-plugin/pull/11)
+- [Adds support for Vault address environment variables](https://github.com/premium-minds/datagrip-vault-plugin/pull/9)
+- [Adds support for Vault token helper](https://github.com/premium-minds/datagrip-vault-plugin/pull/11)
 
 ## [1.1.0]
 ### Changed
-
- * [Removes Datagrip upper bound limit](https://github.com/premium-minds/datagrip-vault-plugin/commit/41b818116c77dc00ae22b9922dc7f926912440fc)
+- [Removes Datagrip upper bound limit](https://github.com/premium-minds/datagrip-vault-plugin/commit/41b818116c77dc00ae22b9922dc7f926912440fc)
 
 ## [1.0.1]
 ### Fixed
@@ -21,7 +20,6 @@
 ## [1.0.0]
 ### Added
 - Adds support for new versions Datagrip 2022.2 (221)
-
 
 ### Removed
 - Dropped support for older versions < Datagrip 2022.2 (221)
