@@ -14,8 +14,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -54,6 +57,8 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    private static final Map<DynamicSecretKey, DynamicSecretValue> secretsCache = new ConcurrentHashMap<>();
+
     @Override
     public @NonNls @NotNull String getId() {
         return "vault";
@@ -75,34 +80,24 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         try {
             final var address = getAddress(protoConnection);
             final var secret = getSecret(protoConnection);
-            final var token = getToken(protoConnection, address);
 
             logger.info("Address used: " + address);
             logger.info("Secret used: " + secret);
 
-            final var uri = URI.create(address).resolve("/v1/").resolve(secret);
+            DynamicSecretKey key = new DynamicSecretKey(address, secret);
+            DynamicSecretValue value = secretsCache.get(key);
 
-            final var request = HttpRequest.newBuilder()
-                    .GET()
-                    .header("X-Vault-Token", token)
-                    .uri(uri)
-                    .build();
-
-            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-                throw new RuntimeException("Problem connecting to Vault: " + response.body());
-            } else {
-                final var gson = new GsonBuilder()
-                        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                        .create();
-                final var secretResponse = gson.fromJson(response.body(), DynamicSecretResponse.class);
-
-                logger.info("Username used " + secretResponse.getData().getUsername());
-
-                protoConnection.getConnectionProperties().put("user", secretResponse.getData().getUsername());
-                protoConnection.getConnectionProperties().put("password", secretResponse.getData().getPassword());
+            if (value == null || value.getExpireTime().isBefore(Instant.now())) {
+                final var response = getCredentialsFromVault(protoConnection, address, secret);
+                value = new DynamicSecretValue(Instant.now(), response);
+                secretsCache.put(key, value);
             }
+
+            logger.info("Username used " + value.getResponse().getData().getUsername());
+
+            protoConnection.getConnectionProperties().put("user", value.getResponse().getData().getUsername());
+            protoConnection.getConnectionProperties().put("password", value.getResponse().getData().getPassword());
+
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
         }
@@ -113,6 +108,34 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nullable AuthWidget createWidget(@Nullable Project project, @NotNull DatabaseCredentials credentials, @NotNull DatabaseConnectionConfig config) {
         return new VaultWidget();
+    }
+
+    private DynamicSecretResponse getCredentialsFromVault(
+            ProtoConnection protoConnection,
+            final String address,
+            final String secret)
+            throws IOException, InterruptedException
+    {
+        final var token = getToken(protoConnection, address);
+
+        final var uri = URI.create(address).resolve("/v1/").resolve(secret);
+
+        final var request = HttpRequest.newBuilder()
+                .GET()
+                .header("X-Vault-Token", token)
+                .uri(uri)
+                .build();
+
+        final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+            throw new RuntimeException("Problem connecting to Vault: " + response.body());
+        }
+        final var gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+
+        return gson.fromJson(response.body(), DynamicSecretResponse.class);
     }
 
     private String getAddress(ProtoConnection protoConnection) {
