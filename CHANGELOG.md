@@ -4,8 +4,10 @@
 
 ## [Unreleased]
 
+## [1.3.2]
+**Full Changelog**: https://github.com/premium-minds/datagrip-vault-plugin/compare/v1.3.1...v1.3.2
+
 ## [1.3.1]
-**Full Changelog**: https://github.com/premium-minds/datagrip-vault-plugin/compare/v1.3.0...v1.3.1
 
 ## [1.3.0]
 - [Adds cache to reuse existing Vault dynamic secrets](https://github.com/premium-minds/datagrip-vault-plugin/pull/14)
