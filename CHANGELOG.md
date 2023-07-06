@@ -7,6 +7,9 @@
 ## [1.3.1]
 **Full Changelog**: https://github.com/premium-minds/datagrip-vault-plugin/compare/v1.3.0...v1.3.1
 
+## [1.3.0]
+- [Adds cache to reuse existing Vault dynamic secrets](https://github.com/premium-minds/datagrip-vault-plugin/pull/14)
+
 ## [1.2.1]
 - [Use Try-with-resources for .vault file](https://github.com/premium-minds/datagrip-vault-plugin/commit/f7ea6c7e5e02a0453c948573b9629a05eeaa0ded)
 
