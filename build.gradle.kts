@@ -90,9 +90,6 @@ tasks {
         })
     }
 
-    runPluginVerifier {
-        ideVersions.set(listOf("IU-2022.1", "IU-2022.2", "IU-2022.3", "IU-2023.1"))
-    }
 
     // Configure UI tests plugin
     // Read more: https://github.com/JetBrains/intellij-ui-test-robot

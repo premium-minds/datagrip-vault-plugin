@@ -1,5 +1,6 @@
 package com.premiumminds.datagrip.vault;
 
+import java.awt.Dimension;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
@@ -10,11 +11,10 @@ import com.intellij.database.dataSource.url.template.MutableParametersHolder;
 import com.intellij.database.dataSource.url.template.ParametersHolder;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import org.jetbrains.annotations.NotNull;
 
-import static com.intellij.database.dataSource.url.ui.UrlPropertiesPanel.createLabelConstraints;
-import static com.intellij.database.dataSource.url.ui.UrlPropertiesPanel.createSimpleConstraints;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_ADDRESS;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_SECRET;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_TOKEN_FILE;
@@ -111,5 +111,31 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
     @Override
     public void updateUrl(@NotNull MutableParametersHolder mutableParametersHolder) {
 
+    }
+
+    public static GridConstraints createLabelConstraints(int row, int col, double width) {
+        return createConstraints(row, col, 1, 0, 3, (int)width, false);
+    }
+
+    public static GridConstraints createSimpleConstraints(int row, int col, int colSpan) {
+        return createConstraints(row, col, colSpan, 0, 1, -1, true);
+    }
+
+    public static GridConstraints createConstraints(int row, int col, int colSpan, int anchor, int fill, int prefWidth, boolean rubber) {
+        return createConstraints(row, col, 1, colSpan, anchor, fill, prefWidth, rubber);
+    }
+
+    public static GridConstraints createConstraints(int row, int col, int rowSpan, int colSpan, int anchor, int fill, int prefWidth, boolean rubber) {
+        return createConstraints(row, col, rowSpan, colSpan, anchor, fill, prefWidth, rubber, false);
+    }
+
+    public static GridConstraints createConstraints(int row, int col, int rowSpan, int colSpan, int anchor, int fill, int prefWidth, boolean rubber, boolean vrubber) {
+        Dimension nonPref = new Dimension(-1, -1);
+        Dimension pref = new Dimension(prefWidth == -1 ? 100 : prefWidth, -1);
+        return new GridConstraints(row, col, rowSpan, colSpan, anchor, fill, getPolicy(rubber), getPolicy(vrubber), nonPref, pref, nonPref, 0, true);
+    }
+
+    public static int getPolicy(boolean rubber) {
+        return rubber ? 7 : 0;
     }
 }
