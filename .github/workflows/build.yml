@@ -33,6 +33,11 @@ jobs:
       changelog: ${{ steps.properties.outputs.changelog }}
     steps:
 
+      - name: free disk space
+        run: |
+           sudo swapoff /mnt/swapfile
+           sudo rm -rf /mnt/swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+
       # Check out current repository
       - name: Fetch Sources
         uses: actions/checkout@v2.4.0
