@@ -14,8 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +57,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    private static final Map<DynamicSecretKey, DynamicSecretValue> secretsCache = new ConcurrentHashMap<>();
+    private static final Map<DynamicSecretKey, DynamicSecretResponse> secretsCache = new ConcurrentHashMap<>();
 
     @Override
     public @NonNls @NotNull String getId() {
@@ -85,18 +85,27 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             logger.info("Secret used: " + secret);
 
             DynamicSecretKey key = new DynamicSecretKey(address, secret);
-            DynamicSecretValue value = secretsCache.get(key);
+            DynamicSecretResponse value = secretsCache.get(key);
 
-            if (value == null || value.getExpireTime().isBefore(Instant.now())) {
+            if (value == null){
                 final var response = getCredentialsFromVault(protoConnection, address, secret);
-                value = new DynamicSecretValue(Instant.now(), response);
+                value = response;
                 secretsCache.put(key, value);
+            } else {
+                final var lease = getLeaseFromVault(protoConnection, address, value.getLeaseId());
+                if (!lease.isPresent()) {
+
+                    final var response = getCredentialsFromVault(protoConnection, address, secret);
+
+                    value = response;
+                    secretsCache.put(key, value);
+                }
             }
 
-            logger.info("Username used " + value.getResponse().getData().getUsername());
+            logger.info("Username used " + value.getData().getUsername());
 
-            protoConnection.getConnectionProperties().put("user", value.getResponse().getData().getUsername());
-            protoConnection.getConnectionProperties().put("password", value.getResponse().getData().getPassword());
+            protoConnection.getConnectionProperties().put("user", value.getData().getUsername());
+            protoConnection.getConnectionProperties().put("password", value.getData().getPassword());
 
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
@@ -108,6 +117,40 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nullable AuthWidget createWidget(@Nullable Project project, @NotNull DatabaseCredentials credentials, @NotNull DatabaseConnectionConfig config) {
         return new VaultWidget();
+    }
+
+
+    private Optional<LeaseResponse> getLeaseFromVault(
+            ProtoConnection protoConnection,
+            final String address,
+            final String leaseId)
+            throws IOException, InterruptedException
+    {
+        final var token = getToken(protoConnection, address);
+
+        final var uri = URI.create(address).resolve("/v1/sys/leases/lookup");
+
+        final var gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+
+        final var leaseRequest = new LeaseRequest();
+        leaseRequest.setLeaseId(leaseId);
+
+        final var request = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(leaseRequest)))
+                .header("X-Vault-Token", token)
+                .uri(uri)
+                .build();
+
+        final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+            logger.info("No lease found for " + leaseId);
+            return Optional.empty();
+        }
+
+        return Optional.of(gson.fromJson(response.body(), LeaseResponse.class));
     }
 
     private DynamicSecretResponse getCredentialsFromVault(
