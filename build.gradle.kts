@@ -94,8 +94,7 @@ tasks {
         ideVersions.set(
             listOf(
                 "IU-2024.3",
-                "IU-2023.3.8",
-                "IU-2022.3.3"
+                "IU-2023.3.8"
             )
         )
     }
