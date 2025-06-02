@@ -1,10 +1,19 @@
 package com.premiumminds.datagrip.vault;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.intellij.database.access.DatabaseCredentials;
+import com.intellij.database.dataSource.DatabaseAuthProvider;
+import com.intellij.database.dataSource.DatabaseConnectionConfig;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,20 +30,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.intellij.database.access.DatabaseCredentials;
-import com.intellij.database.dataSource.DatabaseAuthProvider;
-import com.intellij.database.dataSource.DatabaseConnectionConfig;
-import com.intellij.database.dataSource.LocalDataSource;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
 
@@ -67,11 +62,6 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nls @NotNull String getDisplayName() {
         return "Vault";
-    }
-
-    @Override
-    public boolean isApplicable(@NotNull LocalDataSource dataSource, @NotNull ApplicabilityLevel level) {
-        return true;
     }
 
     @Override
