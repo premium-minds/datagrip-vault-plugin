@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+## 1.3.4 - 2025-06-16
+
+- Changelog update - `v1.3.3` by @github-actions in https://github.com/premium-minds/datagrip-vault-plugin/pull/33
+- Deprecate recommendation for Vault Agent by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/42
+- Update 1.3.3 from next branch by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/46
+
 ## 1.3.3 - 2024-11-09
 
 - Changelog update - `v1.3.2` by @github-actions in https://github.com/premium-minds/datagrip-vault-plugin/pull/16
