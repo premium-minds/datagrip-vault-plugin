@@ -28,7 +28,6 @@ import com.google.gson.GsonBuilder;
 import com.intellij.database.access.DatabaseCredentials;
 import com.intellij.database.dataSource.DatabaseAuthProvider;
 import com.intellij.database.dataSource.DatabaseConnectionConfig;
-import com.intellij.database.dataSource.LocalDataSource;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
@@ -67,11 +66,6 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nls @NotNull String getDisplayName() {
         return "Vault";
-    }
-
-    @Override
-    public boolean isApplicable(@NotNull LocalDataSource dataSource, @NotNull ApplicabilityLevel level) {
-        return true;
     }
 
     @Override
