@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+## 1.3.6 - 2025-08-01
+
+- Changelog update - `v1.3.5` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/57
+- Update 1.3.6 from next branch by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/60
+
 ## 1.3.5 - 2025-08-01
 
 - Changelog update - `v1.3.4` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/47
