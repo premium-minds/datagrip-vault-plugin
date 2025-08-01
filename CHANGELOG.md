@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+## 1.3.5 - 2025-08-01
+
+- Changelog update - `v1.3.4` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/47
+- Migrate from kotlinOptions {} to compilerOptions {}﻿ by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/50
+- Update 1.3.5 from next branch by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/56
+
 ## 1.3.4 - 2025-06-16
 
 - Changelog update - `v1.3.3` by @github-actions in https://github.com/premium-minds/datagrip-vault-plugin/pull/33
