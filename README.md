@@ -10,7 +10,7 @@ This plugin provides database credentials using [Vault dynamic secrets](https://
 
 Vault login is not handled by this plugin. 
 
-You should manually log in into Vault, which will, using the default [Token Helper](https://www.vaultproject.io/docs/commands/token-helper), create a Vault token file in `$HOME/.vault-token`.
+You should manually log in into Vault, which will, using the default [Token Helper](https://www.vaultproject.io/docs/commands/token-helper), create a Vault token file in `$HOME/.vault-token`. Check another [Vault Token Helper](https://github.com/joemiller/vault-token-helper) with support for native secret storage on macOS, Linux, and Windows.
 
 This plugin will cache credentials in memory until it expires.
 
