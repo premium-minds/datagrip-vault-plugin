@@ -76,7 +76,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     }
 
     @Override
-    public @Nullable CompletionStage<@NotNull ProtoConnection> intercept(@NotNull ProtoConnection protoConnection, boolean b) {
+    public @Nullable CompletionStage<ProtoConnection> intercept(@NotNull ProtoConnection protoConnection, boolean b) {
 
         try {
             final var address = getAddress(protoConnection);
