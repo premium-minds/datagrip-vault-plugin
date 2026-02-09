@@ -1,5 +1,6 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
@@ -104,7 +105,10 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            recommended()
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2022.2")
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2023.1")
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2024.1")
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.1")
         }
         freeArgs = listOf("-mute", "TemplateWordInPluginName")
     }
