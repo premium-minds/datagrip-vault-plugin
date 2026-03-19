@@ -1,6 +1,6 @@
-package com.premiumminds.datagrip.vault;
+package com.premiumminds.datagrip.vault.client;
 
-public class LeaseRequest {
+class LeaseRequest {
 
     private String leaseId;
 

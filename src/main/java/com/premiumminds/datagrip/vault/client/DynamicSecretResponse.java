@@ -1,7 +1,6 @@
-package com.premiumminds.datagrip.vault;
+package com.premiumminds.datagrip.vault.client;
 
-
-public class DynamicSecretResponse {
+class DynamicSecretResponse {
 
     public static class Data {
 

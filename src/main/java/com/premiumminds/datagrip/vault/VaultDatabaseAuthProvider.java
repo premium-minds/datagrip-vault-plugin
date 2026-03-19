@@ -5,32 +5,25 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.intellij.database.access.DatabaseCredentials;
 import com.intellij.database.dataSource.DatabaseAuthProvider;
 import com.intellij.database.dataSource.DatabaseConnectionConfig;
 import com.intellij.database.dataSource.DatabaseConnectionPoint;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.premiumminds.datagrip.vault.client.Credentials;
+import com.premiumminds.datagrip.vault.client.VaultClient;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -52,12 +45,9 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
     private static final String ERROR_VAULT_TOKEN_NOT_DEFINED = "Vault token not defined";
 
-    private static final HttpClient httpClient = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    private static final VaultClient  vaultClient = new VaultClient();
 
-    private static final Map<DynamicSecretKey, DynamicSecretResponse> secretsCache = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, Credentials> secretsCache = new ConcurrentHashMap<>();
 
     @Override
     public @NonNls @NotNull String getId() {
@@ -78,39 +68,34 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nullable CompletionStage<ProtoConnection> intercept(@NotNull ProtoConnection protoConnection, boolean b) {
 
-        try {
-            final var address = getAddress(protoConnection);
-            final var secret = getSecret(protoConnection);
+        final var address = getAddress(protoConnection);
+        final var secret = getSecret(protoConnection);
 
-            logger.info("Address used: " + address);
-            logger.info("Secret used: " + secret);
+        logger.info("Address used: " + address);
+        logger.info("Secret used: " + secret);
 
-            DynamicSecretKey key = new DynamicSecretKey(address, secret);
-            DynamicSecretResponse value = secretsCache.get(key);
-
-            if (value == null){
-                final var response = getCredentialsFromVault(protoConnection, address, secret);
-                value = response;
-                secretsCache.put(key, value);
-            } else {
-                final var lease = getLeaseFromVault(protoConnection, address, value.getLeaseId());
-                if (!lease.isPresent()) {
-
-                    final var response = getCredentialsFromVault(protoConnection, address, secret);
-
-                    value = response;
-                    secretsCache.put(key, value);
+        CacheKey key = new CacheKey(address, secret);
+        Credentials value = secretsCache.compute(key, (k,v) -> {
+            try {
+                final var token = getToken(protoConnection, address);
+                if (v == null) {
+                    return vaultClient.getCredentials(address, token, secret);
+                } else {
+                    final var lease = vaultClient.getLease(address, token, v.leaseId());
+                    if (lease.isEmpty()) {
+                        return vaultClient.getCredentials(address, token, secret);
+                    }
                 }
+                return v;
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
             }
+        });
 
-            logger.info("Username used " + value.getData().getUsername());
+        logger.info("Username used " + value.username());
 
-            protoConnection.getConnectionProperties().put("user", value.getData().getUsername());
-            protoConnection.getConnectionProperties().put("password", value.getData().getPassword());
-
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
-        }
+        protoConnection.getConnectionProperties().put("user", value.username());
+        protoConnection.getConnectionProperties().put("password", value.password());
 
         return CompletableFuture.completedFuture(protoConnection);
     }
@@ -118,68 +103,6 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     @Override
     public @Nullable AuthWidget createWidget(@Nullable Project project, @NotNull DatabaseCredentials credentials, @NotNull DatabaseConnectionConfig config) {
         return new VaultWidget();
-    }
-
-
-    private Optional<LeaseResponse> getLeaseFromVault(
-            ProtoConnection protoConnection,
-            final String address,
-            final String leaseId)
-            throws IOException, InterruptedException
-    {
-        final var token = getToken(protoConnection, address);
-
-        final var uri = URI.create(address).resolve("/v1/sys/leases/lookup");
-
-        final var gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
-
-        final var leaseRequest = new LeaseRequest();
-        leaseRequest.setLeaseId(leaseId);
-
-        final var request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(leaseRequest)))
-                .header("X-Vault-Token", token)
-                .uri(uri)
-                .build();
-
-        final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-            logger.info("No lease found for " + leaseId);
-            return Optional.empty();
-        }
-
-        return Optional.of(gson.fromJson(response.body(), LeaseResponse.class));
-    }
-
-    private DynamicSecretResponse getCredentialsFromVault(
-            ProtoConnection protoConnection,
-            final String address,
-            final String secret)
-            throws IOException, InterruptedException
-    {
-        final var token = getToken(protoConnection, address);
-
-        final var uri = URI.create(address).resolve("/v1/").resolve(secret);
-
-        final var request = HttpRequest.newBuilder()
-                .GET()
-                .header("X-Vault-Token", token)
-                .uri(uri)
-                .build();
-
-        final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-            throw new RuntimeException("Problem connecting to Vault: " + response.body());
-        }
-        final var gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
-
-        return gson.fromJson(response.body(), DynamicSecretResponse.class);
     }
 
     private String getAddress(ProtoConnection protoConnection) {
