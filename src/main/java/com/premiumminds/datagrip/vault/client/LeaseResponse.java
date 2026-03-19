@@ -1,6 +1,6 @@
-package com.premiumminds.datagrip.vault;
+package com.premiumminds.datagrip.vault.client;
 
-public class LeaseResponse {
+class LeaseResponse {
 
     public static class Data {
         private String expireTime;
