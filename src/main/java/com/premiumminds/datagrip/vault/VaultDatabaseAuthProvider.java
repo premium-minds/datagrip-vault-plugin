@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,15 +80,15 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             try {
                 final var token = getToken(protoConnection, address);
                 if (v == null) {
-                    return vaultClient.getCredentials(address, token, secret);
+                    return vaultClient.getCredentials(address, Optional.empty(), token, secret);
                 } else {
-                    final var lease = vaultClient.getLease(address, token, v.leaseId());
+                    final var lease = vaultClient.getLease(address, Optional.empty(), token, v.leaseId());
                     if (lease.isEmpty()) {
-                        return vaultClient.getCredentials(address, token, secret);
+                        return vaultClient.getCredentials(address, Optional.empty(), token, secret);
                     }
                 }
                 return v;
-            } catch (IOException | InterruptedException e) {
+            } catch (Exception e) {
                 throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
             }
         });
