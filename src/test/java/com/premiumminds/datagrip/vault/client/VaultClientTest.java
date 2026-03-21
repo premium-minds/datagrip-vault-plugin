@@ -73,6 +73,7 @@ class VaultClientTest {
             final var credentials = vaultClient.getCredentials(
                     "database/creds/readonly"
             );
+            assertTrue(vaultClient.getLease(credentials.leaseId()).isPresent());
 
             Connection conn = DriverManager.getConnection(
                     String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),
@@ -146,6 +147,7 @@ class VaultClientTest {
             final var credentials = vaultClient.getCredentials(
                     "database/creds/readonly"
             );
+            assertTrue(vaultClient.getLease(credentials.leaseId()).isPresent());
 
             Connection conn = DriverManager.getConnection(
                     String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),
