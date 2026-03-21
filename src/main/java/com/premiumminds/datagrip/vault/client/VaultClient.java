@@ -24,17 +24,65 @@ import java.util.Optional;
 public class VaultClient {
 
     private static final Logger logger = Logger.getInstance(VaultClient.class);
-    public static final String X_VAULT_TOKEN = "X-Vault-Token";
+    private static final String X_VAULT_TOKEN = "X-Vault-Token";
+
+    private final String address;
+    private final Optional<Path> certificate;
+    private final VaultTokenLoader vaultTokenLoader;
+
+    private VaultClient(String address, Optional<Path> certificate, VaultTokenLoader vaultTokenLoader) {
+        this.address = address;
+        this.certificate = certificate;
+        this.vaultTokenLoader = vaultTokenLoader;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String address;
+        private Optional<Path> certificate;
+        private VaultTokenLoader vaultTokenLoader;
+
+        private Builder() {
+        }
+
+        public Builder withAddress(String address) {
+            this.address = address;
+            return this;
+        }
+
+        public Builder withCertificate(Optional<Path> certificate) {
+            this.certificate = certificate;
+            return this;
+        }
+
+        public Builder withTokenLoader(VaultTokenLoader vaultTokenLoader) {
+            this.vaultTokenLoader = vaultTokenLoader;
+            return this;
+        }
+
+        public VaultClient build() {
+            if (this.address == null) {
+                throw new IllegalStateException("address is null");
+            }
+            if (this.certificate == null) {
+                throw new IllegalStateException("address is null");
+            }
+            if (this.vaultTokenLoader == null) {
+                throw new IllegalStateException("address is null");
+            }
+            return new VaultClient(address, certificate, vaultTokenLoader);
+        }
+    }
 
     public Optional<String> getLease(
-            final String baseAddress,
-            final VaultTokenLoader vaultTokenLoader,
-            final Optional<Path> certificate,
             final String leaseId)
             throws Exception
     {
 
-        final var uri = URI.create(baseAddress).resolve("/v1/sys/leases/lookup");
+        final var uri = URI.create(address).resolve("/v1/sys/leases/lookup");
 
         final var gson = new GsonBuilder()
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -63,13 +111,10 @@ public class VaultClient {
     }
 
     public Credentials getCredentials(
-            final String baseAddress,
-            final VaultTokenLoader vaultTokenLoader,
-            final Optional<Path> certificate,
             final String secret)
             throws Exception
     {
-        final var uri = URI.create(baseAddress).resolve("/v1/").resolve(secret);
+        final var uri = URI.create(address).resolve("/v1/").resolve(secret);
 
         final var httpClient = getClient(certificate);
         final var token = vaultTokenLoader.get();

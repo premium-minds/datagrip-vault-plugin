@@ -65,11 +65,12 @@ class VaultClientTest {
                     })
                     .build());
 
-            var vaultClient = new VaultClient();
+            final var vaultClient = VaultClient.builder()
+                .withAddress("http://localhost:" + vault.getMappedPort(8200))
+                .withCertificate(Optional.empty())
+                .withTokenLoader(() -> "root")
+                .build();
             final var credentials = vaultClient.getCredentials(
-                    "http://localhost:" + vault.getMappedPort(8200),
-                    () -> "root",
-                    Optional.empty(),
                     "database/creds/readonly"
             );
 
@@ -137,11 +138,12 @@ class VaultClientTest {
                     })
                     .build());
 
-            var vaultClient = new VaultClient();
+            final var vaultClient = VaultClient.builder()
+                    .withAddress("https://localhost:" + vault.getMappedPort(8200))
+                    .withCertificate(Optional.of(vaultCA))
+                    .withTokenLoader(() -> "root")
+                    .build();
             final var credentials = vaultClient.getCredentials(
-                    "https://localhost:" + vault.getMappedPort(8200),
-                    () -> "root",
-                    Optional.of(vaultCA),
                     "database/creds/readonly"
             );
 
