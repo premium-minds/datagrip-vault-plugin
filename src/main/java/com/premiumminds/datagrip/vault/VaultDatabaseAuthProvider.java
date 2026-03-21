@@ -1,22 +1,12 @@
 package com.premiumminds.datagrip.vault;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-import com.google.gson.Gson;
 import com.intellij.database.access.DatabaseCredentials;
 import com.intellij.database.dataSource.DatabaseAuthProvider;
 import com.intellij.database.dataSource.DatabaseConnectionConfig;
@@ -42,8 +32,6 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     private static final String ENV_VAULT_ADDR = "VAULT_ADDR";
     private static final String ERROR_VAULT_ADDRESS_NOT_DEFINED = "Vault address not defined";
     private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
-
-    private static final VaultClient  vaultClient = new VaultClient();
 
     private static final Map<CacheKey, Credentials> secretsCache = new ConcurrentHashMap<>();
 
@@ -79,13 +67,18 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
 
         CacheKey key = new CacheKey(address, secret);
         Credentials value = secretsCache.compute(key, (k,v) -> {
+            final var vaultClient = VaultClient.builder()
+                    .withAddress(address)
+                    .withCertificate(Optional.empty())
+                    .withTokenLoader(vaultTokenLoader)
+                    .build();
             try {
                 if (v == null) {
-                    return vaultClient.getCredentials(address, vaultTokenLoader, Optional.empty(), secret);
+                    return vaultClient.getCredentials(secret);
                 } else {
-                    final var lease = vaultClient.getLease(address, vaultTokenLoader, Optional.empty(), v.leaseId());
+                    final var lease = vaultClient.getLease(v.leaseId());
                     if (lease.isEmpty()) {
-                        return vaultClient.getCredentials(address, vaultTokenLoader, Optional.empty(), secret);
+                        return vaultClient.getCredentials(secret);
                     }
                 }
                 return v;
