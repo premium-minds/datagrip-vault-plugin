@@ -68,8 +68,8 @@ class VaultClientTest {
             var vaultClient = new VaultClient();
             final var credentials = vaultClient.getCredentials(
                     "http://localhost:" + vault.getMappedPort(8200),
+                    () -> "root",
                     Optional.empty(),
-                    "root",
                     "database/creds/readonly"
             );
 
@@ -140,8 +140,8 @@ class VaultClientTest {
             var vaultClient = new VaultClient();
             final var credentials = vaultClient.getCredentials(
                     "https://localhost:" + vault.getMappedPort(8200),
+                    () -> "root",
                     Optional.of(vaultCA),
-                    "root",
                     "database/creds/readonly"
             );
 

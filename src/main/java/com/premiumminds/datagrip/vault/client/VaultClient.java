@@ -28,8 +28,8 @@ public class VaultClient {
 
     public Optional<String> getLease(
             final String baseAddress,
+            final VaultTokenLoader vaultTokenLoader,
             final Optional<Path> certificate,
-            final String token,
             final String leaseId)
             throws Exception
     {
@@ -43,13 +43,14 @@ public class VaultClient {
         final var leaseRequest = new LeaseRequest();
         leaseRequest.setLeaseId(leaseId);
 
+        final var httpClient = getClient(certificate);
+        final var token = vaultTokenLoader.get();
+
         final var request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(leaseRequest)))
                 .header(X_VAULT_TOKEN, token)
                 .uri(uri)
                 .build();
-
-        final var httpClient = getClient(certificate);
 
         final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -63,14 +64,15 @@ public class VaultClient {
 
     public Credentials getCredentials(
             final String baseAddress,
+            final VaultTokenLoader vaultTokenLoader,
             final Optional<Path> certificate,
-            final String token,
             final String secret)
             throws Exception
     {
         final var uri = URI.create(baseAddress).resolve("/v1/").resolve(secret);
 
         final var httpClient = getClient(certificate);
+        final var token = vaultTokenLoader.get();
 
         final var request = HttpRequest.newBuilder()
                 .GET()
