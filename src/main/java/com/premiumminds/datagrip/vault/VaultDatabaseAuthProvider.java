@@ -15,6 +15,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.premiumminds.datagrip.vault.client.Credentials;
 import com.premiumminds.datagrip.vault.client.DefaultVaultTokenLoader;
+import com.premiumminds.datagrip.vault.client.Lease;
+import com.premiumminds.datagrip.vault.client.Request;
 import com.premiumminds.datagrip.vault.client.VaultClient;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
@@ -65,8 +67,9 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
                 address
         );
 
-        CacheKey key = new CacheKey(address, secret);
-        Credentials value = secretsCache.compute(key, (k,v) -> {
+        final var credentialsRequest = Request.dynamicRequest();
+        final var key = new CacheKey(address, secret);
+        final var value = secretsCache.compute(key, (k, v) -> {
             final var vaultClient = VaultClient.builder()
                     .withAddress(address)
                     .withCertificate(Optional.empty())
@@ -74,11 +77,13 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
                     .build();
             try {
                 if (v == null) {
-                    return vaultClient.getCredentials(secret);
+                    return vaultClient.getCredentials(secret, credentialsRequest);
                 } else {
-                    final var lease = vaultClient.getLease(v.leaseId());
-                    if (lease.isEmpty()) {
-                        return vaultClient.getCredentials(secret);
+                    if (v instanceof Lease lease) {
+                        final var leaseOpt = vaultClient.getLease(lease.leaseId());
+                        if (leaseOpt.isEmpty()) {
+                            return vaultClient.getCredentials(secret, credentialsRequest);
+                        }
                     }
                 }
                 return v;
