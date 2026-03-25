@@ -15,6 +15,7 @@ import java.sql.ResultSet;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,7 +25,7 @@ class VaultClientTest {
     Path tempDir;
 
     @Test
-    void getCredentials() throws Exception {
+    void dynamicCredentials() throws Exception {
 
         final var network = Network.newNetwork();
 
@@ -71,9 +72,15 @@ class VaultClientTest {
                 .withTokenLoader(() -> "root")
                 .build();
             final var credentials = vaultClient.getCredentials(
-                    "database/creds/readonly"
+                    "database/creds/readonly",
+                    Request.dynamicRequest()
             );
-            assertTrue(vaultClient.getLease(credentials.leaseId()).isPresent());
+
+            if (credentials instanceof Lease lease){
+                assertTrue(vaultClient.getLease(lease.leaseId()).isPresent());
+            } else {
+                fail("should be an instance of Lease");
+            }
 
             Connection conn = DriverManager.getConnection(
                     String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),
@@ -93,7 +100,194 @@ class VaultClientTest {
     }
 
     @Test
-    void getCredentialsSelfSigned() throws Exception {
+    void staticCredentials() throws Exception {
+
+        final var network = Network.newNetwork();
+
+        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+                .withNetwork(network)
+                .withNetworkAliases("postgres")
+                .withEnv("POSTGRES_USER", "root")
+                .withEnv("POSTGRES_PASSWORD", "rootpassword")
+                .withExposedPorts(5432);
+        postgres.start();
+
+        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+                .withNetwork(network)
+                .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
+                .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                .withExposedPorts(8200);
+        vault.start();
+
+        try (postgres; vault; network)
+        {
+            postgres.execInContainer("psql", "-U", "root", "-c", "CREATE ROLE foo WITH LOGIN;");
+            vault.execInContainer(ExecConfig.builder()
+                    .envVars(Map.of("VAULT_ADDR", "http://127.0.0.1:8200", "VAULT_TOKEN", "root"))
+                    .command(new String[]{"sh", "-c", """
+                        vault secrets enable database
+                        vault write database/config/my-database \
+                              plugin_name=postgresql-database-plugin \
+                              connection_url="postgresql://{{username}}:{{password}}@postgres:5432/postgres?sslmode=disable" \
+                              allowed_roles="my-role" \
+                              username="root" \
+                              password="rootpassword"
+                        vault write database/static-roles/my-role \
+                              db_name=my-database \
+                              username="foo" \
+                              rotation_schedule="0 * * * SAT"
+                        """
+                    })
+                    .build());
+
+            final var vaultClient = VaultClient.builder()
+                .withAddress("http://localhost:" + vault.getMappedPort(8200))
+                .withCertificate(Optional.empty())
+                .withTokenLoader(() -> "root")
+                .build();
+            final var credentials = vaultClient.getCredentials(
+                    "database/static-creds/my-role",
+                    new StaticRequest()
+            );
+            assertFalse(credentials instanceof Lease);
+
+            Connection conn = DriverManager.getConnection(
+                    String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),
+                    credentials.username(),
+                    credentials.password()
+            );
+
+            try(final var statement = conn.createStatement()) {
+                ResultSet rs = statement.executeQuery("SELECT version();");
+                if (rs.next()) {
+                    assertTrue(rs.getString("version").startsWith("PostgreSQL"));
+                } else {
+                    fail("version query is empty");
+                }
+            }
+        }
+    }
+
+    @Test
+    void kv1() throws Exception {
+
+        final var network = Network.newNetwork();
+
+        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+                .withNetwork(network)
+                .withNetworkAliases("postgres")
+                .withEnv("POSTGRES_USER", "root")
+                .withEnv("POSTGRES_PASSWORD", "rootpassword")
+                .withExposedPorts(5432);
+        postgres.start();
+
+        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+                .withNetwork(network)
+                .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
+                .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                .withExposedPorts(8200);
+        vault.start();
+
+        try (postgres; vault; network)
+        {
+            vault.execInContainer(ExecConfig.builder()
+                    .envVars(Map.of("VAULT_ADDR", "http://127.0.0.1:8200", "VAULT_TOKEN", "root"))
+                    .command(new String[]{"sh", "-c", """
+                        vault secrets enable -path=kv1/data kv-v1
+                        vault kv put kv1/data/postgres user="root" password="rootpassword"
+                        """
+                    })
+                    .build());
+
+            final var vaultClient = VaultClient.builder()
+                .withAddress("http://localhost:" + vault.getMappedPort(8200))
+                .withCertificate(Optional.empty())
+                .withTokenLoader(() -> "root")
+                .build();
+            final var credentials = vaultClient.getCredentials(
+                    "kv1/data/postgres",
+                    Request.kv1Request("user", "password")
+            );
+            assertFalse(credentials instanceof Lease);
+
+            Connection conn = DriverManager.getConnection(
+                    String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),
+                    credentials.username(),
+                    credentials.password()
+            );
+
+            try(final var statement = conn.createStatement()) {
+                ResultSet rs = statement.executeQuery("SELECT version();");
+                if (rs.next()) {
+                    assertTrue(rs.getString("version").startsWith("PostgreSQL"));
+                } else {
+                    fail("version query is empty");
+                }
+            }
+        }
+    }
+
+    @Test
+    void kv2() throws Exception {
+
+        final var network = Network.newNetwork();
+
+        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+                .withNetwork(network)
+                .withNetworkAliases("postgres")
+                .withEnv("POSTGRES_USER", "root")
+                .withEnv("POSTGRES_PASSWORD", "rootpassword")
+                .withExposedPorts(5432);
+        postgres.start();
+
+        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+                .withNetwork(network)
+                .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
+                .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                .withExposedPorts(8200);
+        vault.start();
+
+        try (postgres; vault; network)
+        {
+            vault.execInContainer(ExecConfig.builder()
+                    .envVars(Map.of("VAULT_ADDR", "http://127.0.0.1:8200", "VAULT_TOKEN", "root"))
+                    .command(new String[]{"sh", "-c", """
+                        vault secrets enable -path=kv2/data kv-v2
+                        vault kv put kv2/data/postgres user="root" password="rootpassword"
+                        """
+                    })
+                    .build());
+
+            final var vaultClient = VaultClient.builder()
+                .withAddress("http://localhost:" + vault.getMappedPort(8200))
+                .withCertificate(Optional.empty())
+                .withTokenLoader(() -> "root")
+                .build();
+            final var credentials = vaultClient.getCredentials(
+                    "kv2/data/data/postgres",
+                    Request.kv2Request("user", "password")
+            );
+            assertFalse(credentials instanceof Lease);
+
+            Connection conn = DriverManager.getConnection(
+                    String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),
+                    credentials.username(),
+                    credentials.password()
+            );
+
+            try(final var statement = conn.createStatement()) {
+                ResultSet rs = statement.executeQuery("SELECT version();");
+                if (rs.next()) {
+                    assertTrue(rs.getString("version").startsWith("PostgreSQL"));
+                } else {
+                    fail("version query is empty");
+                }
+            }
+        }
+    }
+
+    @Test
+    void selfSignedCertificate() throws Exception {
 
         final var network = Network.newNetwork();
 
@@ -145,9 +339,15 @@ class VaultClientTest {
                     .withTokenLoader(() -> "root")
                     .build();
             final var credentials = vaultClient.getCredentials(
-                    "database/creds/readonly"
+                    "database/creds/readonly",
+                    Request.dynamicRequest()
             );
-            assertTrue(vaultClient.getLease(credentials.leaseId()).isPresent());
+
+            if (credentials instanceof Lease lease){
+                assertTrue(vaultClient.getLease(lease.leaseId()).isPresent());
+            } else {
+                fail("should be an instance of Lease");
+            }
 
             Connection conn = DriverManager.getConnection(
                     String.format("jdbc:postgresql://localhost:%s/postgres", postgres.getMappedPort(5432)),

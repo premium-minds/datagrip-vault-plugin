@@ -19,6 +19,7 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
 public class VaultClient {
@@ -111,7 +112,8 @@ public class VaultClient {
     }
 
     public Credentials getCredentials(
-            final String secret)
+            final String secret,
+            final Request credentialsRequest)
             throws Exception
     {
         final var uri = URI.create(address).resolve("/v1/").resolve(secret);
@@ -135,10 +137,34 @@ public class VaultClient {
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
                 .create();
 
-        final var dynamicSecret = gson.fromJson(response.body(), DynamicSecretResponse.class);
-        return new Credentials(dynamicSecret.getData().getUsername(),
-                dynamicSecret.getData().getPassword(),
-                dynamicSecret.getLeaseId());
+        // TODO: replace with JEP 441: Pattern Matching for switch in Java 21
+        final var vaultResponse = gson.fromJson(response.body(), VaultResponse.class);
+        if (credentialsRequest instanceof Request.StaticRequest) {
+            final var username = (String) vaultResponse.getData().get("username");
+            final var password = (String) vaultResponse.getData().get("password");
+            return new Response(username, password);
+        } else if (credentialsRequest instanceof Request.DynamicRequest) {
+            final var username = (String) vaultResponse.getData().get("username");
+            final var password = (String) vaultResponse.getData().get("password");
+            return new ResponseWithLease(username, password, vaultResponse.getLeaseId());
+        } else if (credentialsRequest instanceof Request.KV1Request kv1Request) {
+            final var username = (String) vaultResponse.getData().get(kv1Request.userKey());
+            final var password = (String) vaultResponse.getData().get(kv1Request.passKey());
+            return new Response(username, password);
+        } else if (credentialsRequest instanceof Request.KV2Request kv2Request) {
+            final var data = (Map<String, String>) vaultResponse.getData().get("data");
+            final var username = data.get(kv2Request.userKey());
+            final var password = data.get(kv2Request.passKey());
+            return new Response(username, password);
+        } else {
+            throw new IllegalStateException("Unknown request type: " + credentialsRequest.getClass().getName());
+        }
+    }
+
+    private record Response(String username, String password) implements Credentials {
+    }
+
+    private record ResponseWithLease(String username, String password, String leaseId) implements Credentials, Lease {
     }
 
     private HttpClient getClient(Optional<Path> certificate) throws Exception {
