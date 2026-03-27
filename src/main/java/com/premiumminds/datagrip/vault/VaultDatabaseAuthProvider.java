@@ -72,7 +72,6 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         final var value = secretsCache.compute(key, (k, v) -> {
             final var vaultClient = VaultClient.builder()
                     .withAddress(address)
-                    .withCertificate(Optional.empty())
                     .withTokenLoader(vaultTokenLoader)
                     .build();
             try {

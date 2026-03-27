@@ -26,14 +26,17 @@ public class VaultClient {
 
     private static final Logger logger = Logger.getInstance(VaultClient.class);
     private static final String X_VAULT_TOKEN = "X-Vault-Token";
+    private static final String X_VAULT_NAMESPACE = "X-Vault-Namespace";
 
     private final String address;
     private final Optional<Path> certificate;
+    private final Optional<String> namespace;
     private final VaultTokenLoader vaultTokenLoader;
 
-    private VaultClient(String address, Optional<Path> certificate, VaultTokenLoader vaultTokenLoader) {
+    private VaultClient(String address, Optional<Path> certificate, Optional<String> namespace, VaultTokenLoader vaultTokenLoader) {
         this.address = address;
         this.certificate = certificate;
+        this.namespace = namespace;
         this.vaultTokenLoader = vaultTokenLoader;
     }
 
@@ -43,7 +46,8 @@ public class VaultClient {
 
     public static class Builder {
         private String address;
-        private Optional<Path> certificate;
+        private Path certificate;
+        private String namespace;
         private VaultTokenLoader vaultTokenLoader;
 
         private Builder() {
@@ -54,8 +58,12 @@ public class VaultClient {
             return this;
         }
 
-        public Builder withCertificate(Optional<Path> certificate) {
+        public Builder withCertificate(Path certificate) {
             this.certificate = certificate;
+            return this;
+        }
+        public Builder withNamespace(String namespace) {
+            this.namespace = namespace;
             return this;
         }
 
@@ -68,13 +76,13 @@ public class VaultClient {
             if (this.address == null) {
                 throw new IllegalStateException("address is null");
             }
-            if (this.certificate == null) {
-                throw new IllegalStateException("address is null");
-            }
             if (this.vaultTokenLoader == null) {
-                throw new IllegalStateException("address is null");
+                throw new IllegalStateException("vaultTokenLoader is null");
             }
-            return new VaultClient(address, certificate, vaultTokenLoader);
+            return new VaultClient(address,
+                    Optional.ofNullable(certificate),
+                    Optional.ofNullable(namespace),
+                    vaultTokenLoader);
         }
     }
 
@@ -95,11 +103,12 @@ public class VaultClient {
         final var httpClient = getClient(certificate);
         final var token = vaultTokenLoader.get();
 
-        final var request = HttpRequest.newBuilder()
+        final var builder = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(leaseRequest)))
                 .header(X_VAULT_TOKEN, token)
-                .uri(uri)
-                .build();
+                .uri(uri);
+        namespace.ifPresent(s -> builder.header(X_VAULT_NAMESPACE, s));
+        final var request = builder.build();
 
         final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -121,11 +130,12 @@ public class VaultClient {
         final var httpClient = getClient(certificate);
         final var token = vaultTokenLoader.get();
 
-        final var request = HttpRequest.newBuilder()
+        final var builder = HttpRequest.newBuilder()
                 .GET()
                 .header(X_VAULT_TOKEN, token)
-                .uri(uri)
-                .build();
+                .uri(uri);
+        namespace.ifPresent(s -> builder.header(X_VAULT_NAMESPACE, s));
+        final var request = builder.build();
 
         final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
