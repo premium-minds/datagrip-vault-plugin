@@ -13,7 +13,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,7 +67,6 @@ class VaultClientTest {
 
             final var vaultClient = VaultClient.builder()
                 .withAddress("http://localhost:" + vault.getMappedPort(8200))
-                .withCertificate(Optional.empty())
                 .withTokenLoader(() -> "root")
                 .build();
             final var credentials = vaultClient.getCredentials(
@@ -142,12 +140,11 @@ class VaultClientTest {
 
             final var vaultClient = VaultClient.builder()
                 .withAddress("http://localhost:" + vault.getMappedPort(8200))
-                .withCertificate(Optional.empty())
                 .withTokenLoader(() -> "root")
                 .build();
             final var credentials = vaultClient.getCredentials(
                     "database/static-creds/my-role",
-                    new StaticRequest()
+                    Request.staticRequest()
             );
             assertFalse(credentials instanceof Lease);
 
@@ -201,7 +198,6 @@ class VaultClientTest {
 
             final var vaultClient = VaultClient.builder()
                 .withAddress("http://localhost:" + vault.getMappedPort(8200))
-                .withCertificate(Optional.empty())
                 .withTokenLoader(() -> "root")
                 .build();
             final var credentials = vaultClient.getCredentials(
@@ -260,7 +256,6 @@ class VaultClientTest {
 
             final var vaultClient = VaultClient.builder()
                 .withAddress("http://localhost:" + vault.getMappedPort(8200))
-                .withCertificate(Optional.empty())
                 .withTokenLoader(() -> "root")
                 .build();
             final var credentials = vaultClient.getCredentials(
@@ -335,7 +330,7 @@ class VaultClientTest {
 
             final var vaultClient = VaultClient.builder()
                     .withAddress("https://localhost:" + vault.getMappedPort(8200))
-                    .withCertificate(Optional.of(vaultCA))
+                    .withCertificate(vaultCA)
                     .withTokenLoader(() -> "root")
                     .build();
             final var credentials = vaultClient.getCredentials(
