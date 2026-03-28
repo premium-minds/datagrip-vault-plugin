@@ -1,7 +1,6 @@
 package com.premiumminds.datagrip.vault.client;
 
 import com.google.gson.Gson;
-import com.premiumminds.datagrip.vault.VaultConfig;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
