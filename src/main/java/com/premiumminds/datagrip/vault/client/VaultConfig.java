@@ -1,4 +1,4 @@
-package com.premiumminds.datagrip.vault;
+package com.premiumminds.datagrip.vault.client;
 
 import com.google.gson.annotations.SerializedName;
 
