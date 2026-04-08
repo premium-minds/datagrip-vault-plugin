@@ -1,8 +1,8 @@
-package com.premiumminds.datagrip.vault.client;
+package com.premiumminds.vault.client;
 
 import com.google.gson.annotations.SerializedName;
 
-public class VaultConfig {
+class VaultConfig {
     @SerializedName("token_helper")
     public String tokenHelper;
 }

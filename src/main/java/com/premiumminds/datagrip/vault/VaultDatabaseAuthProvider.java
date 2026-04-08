@@ -13,11 +13,11 @@ import com.intellij.database.dataSource.DatabaseConnectionConfig;
 import com.intellij.database.dataSource.DatabaseConnectionPoint;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.premiumminds.datagrip.vault.client.Credentials;
-import com.premiumminds.datagrip.vault.client.DefaultVaultTokenLoader;
-import com.premiumminds.datagrip.vault.client.Lease;
-import com.premiumminds.datagrip.vault.client.Request;
-import com.premiumminds.datagrip.vault.client.VaultClient;
+import com.premiumminds.vault.client.Credentials;
+import com.premiumminds.vault.client.DefaultVaultTokenLoader;
+import com.premiumminds.vault.client.Lease;
+import com.premiumminds.vault.client.Request;
+import com.premiumminds.vault.client.VaultClient;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -29,9 +29,11 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
 
     public static final String PROP_SECRET = "vault_secret";
     public static final String PROP_ADDRESS = "vault_address";
+    public static final String PROP_CERTIFICATE = "vault_certificate";
     public static final String PROP_TOKEN_FILE = "vault_token_file";
     private static final String ENV_VAULT_AGENT_ADDR = "VAULT_AGENT_ADDR";
     private static final String ENV_VAULT_ADDR = "VAULT_ADDR";
+    private static final String ENV_VAULT_CACERT = "VAULT_CACERT";
     private static final String ERROR_VAULT_ADDRESS_NOT_DEFINED = "Vault address not defined";
     private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
 
@@ -58,6 +60,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
 
         final var address = getAddress(protoConnection);
         final var secret = getSecret(protoConnection);
+        final var certificate = getCertificate(protoConnection);
 
         logger.info("Address used: " + address);
         logger.info("Secret used: " + secret);
@@ -73,6 +76,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             final var vaultClient = VaultClient.builder()
                     .withAddress(address)
                     .withTokenLoader(vaultTokenLoader)
+                    .withCertificate(certificate)
                     .build();
             try {
                 if (v == null) {
@@ -104,7 +108,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         return new VaultWidget();
     }
 
-    private String getAddress(ProtoConnection protoConnection) {
+    private @NotNull String getAddress(ProtoConnection protoConnection) {
         final var definedAddress = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_ADDRESS);
         if (definedAddress != null && !definedAddress.isBlank()) {
             return definedAddress;
@@ -121,11 +125,25 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         throw new RuntimeException(ERROR_VAULT_ADDRESS_NOT_DEFINED);
     }
 
-    private String getSecret(ProtoConnection protoConnection) {
+    private @NotNull String getSecret(ProtoConnection protoConnection) {
         final var secret = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_SECRET);
         if (secret != null && !secret.isBlank()) {
             return secret;
         }
         throw new RuntimeException(ERROR_VAULT_SECRET_NOT_DEFINED);
     }
+
+    private @Nullable Path getCertificate(ProtoConnection protoConnection) {
+        final var definedCertificate = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_CERTIFICATE);
+        if (definedCertificate != null && !definedCertificate.isBlank()) {
+            return Path.of(definedCertificate);
+        } else {
+            final String vaultCertificateEnv = System.getenv(ENV_VAULT_CACERT);
+            if (vaultCertificateEnv != null && !vaultCertificateEnv.isBlank()){
+                return Path.of(vaultCertificateEnv);
+            }
+        }
+        return null;
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.premiumminds.datagrip.vault.client;
+package com.premiumminds.vault.client;
 
 import com.google.gson.Gson;
 
