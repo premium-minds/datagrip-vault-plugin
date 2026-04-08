@@ -1,4 +1,4 @@
-package com.premiumminds.datagrip.vault.client;
+package com.premiumminds.vault.client;
 
 public sealed interface Request permits Request.StaticRequest, Request.DynamicRequest, Request.KV1Request, Request.KV2Request {
 

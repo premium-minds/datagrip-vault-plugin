@@ -1,4 +1,4 @@
-package com.premiumminds.datagrip.vault.client;
+package com.premiumminds.vault.client;
 
 import com.github.dockerjava.api.model.Capability;
 import org.junit.jupiter.api.Test;
