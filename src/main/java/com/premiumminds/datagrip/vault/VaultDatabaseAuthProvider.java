@@ -31,6 +31,9 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     public static final String PROP_ADDRESS = "vault_address";
     public static final String PROP_CERTIFICATE = "vault_certificate";
     public static final String PROP_TOKEN_FILE = "vault_token_file";
+    public static final String PROP_SECRET_TYPE = "secret_type";
+    public static final String PROP_USERNAME_KEY = "username_key";
+    public static final String PROP_PASSWORD_KEY = "password_key";
     private static final String ENV_VAULT_AGENT_ADDR = "VAULT_AGENT_ADDR";
     private static final String ENV_VAULT_ADDR = "VAULT_ADDR";
     private static final String ENV_VAULT_CACERT = "VAULT_CACERT";
@@ -61,6 +64,9 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         final var address = getAddress(protoConnection);
         final var secret = getSecret(protoConnection);
         final var certificate = getCertificate(protoConnection);
+        final var secretType = getSecretType(protoConnection);
+        final var usernameKey = getUsernameKey(protoConnection);
+        final var passwordKey = getPasswordKey(protoConnection);
 
         logger.info("Address used: " + address);
         logger.info("Secret used: " + secret);
@@ -70,8 +76,15 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
                 address
         );
 
-        final var credentialsRequest = Request.dynamicRequest();
-        final var key = new CacheKey(address, secret);
+        final Request credentialsRequest = switch (secretType) {
+            case DYNAMIC_ROLE -> Request.dynamicRequest();
+            case STATIC_ROLE -> Request.staticRequest();
+            case KV1 -> Request.kv1Request(usernameKey, passwordKey);
+            case KV2 -> Request.kv2Request(usernameKey, passwordKey);
+        };
+        final var key = new CacheKey(address, secret, secretType);
+        logger.info("Cache key used: " + key);
+
         final var value = secretsCache.compute(key, (k, v) -> {
             final var vaultClient = VaultClient.builder()
                     .withAddress(address)
@@ -144,6 +157,22 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             }
         }
         return null;
+    }
+
+    private @NotNull SecretType getSecretType(ProtoConnection protoConnection) {
+        final var definedSecretType = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_SECRET_TYPE);
+        if (definedSecretType != null && !definedSecretType.isBlank()) {
+            return SecretType.valueOf(definedSecretType);
+        }
+        return SecretType.DYNAMIC_ROLE;
+    }
+
+    private @Nullable String getUsernameKey(ProtoConnection protoConnection) {
+        return protoConnection.getConnectionPoint().getAdditionalProperty(PROP_USERNAME_KEY);
+    }
+
+    private @Nullable String getPasswordKey(ProtoConnection protoConnection) {
+        return protoConnection.getConnectionPoint().getAdditionalProperty(PROP_PASSWORD_KEY);
     }
 
 }
