@@ -30,6 +30,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     public static final String PROP_SECRET = "vault_secret";
     public static final String PROP_ADDRESS = "vault_address";
     public static final String PROP_CERTIFICATE = "vault_certificate";
+    public static final String PROP_NAMESPACE = "vault_namespace";
     public static final String PROP_TOKEN_FILE = "vault_token_file";
     public static final String PROP_SECRET_TYPE = "secret_type";
     public static final String PROP_USERNAME_KEY = "username_key";
@@ -37,6 +38,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     private static final String ENV_VAULT_AGENT_ADDR = "VAULT_AGENT_ADDR";
     private static final String ENV_VAULT_ADDR = "VAULT_ADDR";
     private static final String ENV_VAULT_CACERT = "VAULT_CACERT";
+    private static final String ENV_VAULT_NAMESPACE = "VAULT_NAMESPACE";
     private static final String ERROR_VAULT_ADDRESS_NOT_DEFINED = "Vault address not defined";
     private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
 
@@ -64,6 +66,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         final var address = getAddress(protoConnection);
         final var secret = getSecret(protoConnection);
         final var certificate = getCertificate(protoConnection);
+        final var namespace = getNamespace(protoConnection);
         final var secretType = getSecretType(protoConnection);
         final var usernameKey = getUsernameKey(protoConnection);
         final var passwordKey = getPasswordKey(protoConnection);
@@ -90,6 +93,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
                     .withAddress(address)
                     .withTokenLoader(vaultTokenLoader)
                     .withCertificate(certificate)
+                    .withNamespace(namespace)
                     .build();
             try {
                 if (v == null) {
@@ -154,6 +158,19 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             final String vaultCertificateEnv = System.getenv(ENV_VAULT_CACERT);
             if (vaultCertificateEnv != null && !vaultCertificateEnv.isBlank()){
                 return Path.of(vaultCertificateEnv);
+            }
+        }
+        return null;
+    }
+
+    private @Nullable String getNamespace(ProtoConnection protoConnection) {
+        final var definedNamespace = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_NAMESPACE);
+        if (definedNamespace != null && !definedNamespace.isBlank()) {
+            return definedNamespace;
+        } else {
+            final String vaultNamespaceEnv = System.getenv(ENV_VAULT_NAMESPACE);
+            if (vaultNamespaceEnv != null && !vaultNamespaceEnv.isBlank()){
+                return vaultNamespaceEnv;
             }
         }
         return null;

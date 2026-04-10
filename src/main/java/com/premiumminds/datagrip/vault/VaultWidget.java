@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_ADDRESS;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_CERTIFICATE;
+import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_NAMESPACE;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_PASSWORD_KEY;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_SECRET;
 import static com.premiumminds.datagrip.vault.VaultDatabaseAuthProvider.PROP_SECRET_TYPE;
@@ -34,6 +35,7 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
     private final JBTextField secretText;
     private final JBTextField tokenFileText;
     private final JBTextField certificateText;
+    private final JBTextField namespaceText;
     private final ComboBox<SecretType> secretType;
     private final JBTextField usernameKeyText;
     private final JBTextField passwordKeyText;
@@ -46,6 +48,7 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
         secretText = new JBTextField();
         tokenFileText = new JBTextField();
         certificateText = new JBTextField();
+        namespaceText = new JBTextField();
         secretType = new ComboBox<>(SecretType.values());
         usernameKeyText = new JBTextField();
         passwordKeyText = new JBTextField();
@@ -54,39 +57,45 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
         secretText.getEmptyText().setText("e.g.: secret/my-secret");
         tokenFileText.getEmptyText().setText("Default: $HOME/.vault-token");
         certificateText.getEmptyText().setText("Path to certificate");
+        namespaceText.getEmptyText().setText("Namespace");
         usernameKeyText.getEmptyText().setText("username");
         passwordKeyText.getEmptyText().setText("password");
 
-        panel = new JPanel(new GridLayoutManager(7, 6));
+        int currentRow = 0;
+        panel = new JPanel(new GridLayoutManager(8, 6));
 
         final var addressLabel = new JBLabel(vaultBundle.getMessage("address"));
         final var secretLabel = new JBLabel(vaultBundle.getMessage("secret"));
         final var tokenFileLabel = new JBLabel(vaultBundle.getMessage("tokenFile"));
         final var certificateLabel = new JBLabel(vaultBundle.getMessage("certificate"));
+        final var namespaceLabel = new JBLabel(vaultBundle.getMessage("namespace"));
         final var secretTypeLabel = new JBLabel(vaultBundle.getMessage("secretType"));
         final var usernameKeyLabel = new JBLabel(vaultBundle.getMessage("usernameKey"));
         final var passwordKeyLabel = new JBLabel(vaultBundle.getMessage("passwordKey"));
 
-        panel.add(addressLabel, createLabelConstraints(0, 0, addressLabel.getPreferredSize().getWidth()));
-        panel.add(addressText, createSimpleConstraints(0, 1, 3));
+        panel.add(addressLabel, createLabelConstraints(currentRow, 0, addressLabel.getPreferredSize().getWidth()));
+        panel.add(addressText, createSimpleConstraints(currentRow++, 1, 3));
 
-        panel.add(secretLabel, createLabelConstraints(1, 0, secretLabel.getPreferredSize().getWidth()));
-        panel.add(secretText, createSimpleConstraints(1, 1, 3));
+        panel.add(secretLabel, createLabelConstraints(currentRow, 0, secretLabel.getPreferredSize().getWidth()));
+        panel.add(secretText, createSimpleConstraints(currentRow++, 1, 3));
 
-        panel.add(tokenFileLabel, createLabelConstraints(2, 0, tokenFileLabel.getPreferredSize().getWidth()));
-        panel.add(tokenFileText, createSimpleConstraints(2, 1, 3));
+        panel.add(tokenFileLabel, createLabelConstraints(currentRow, 0, tokenFileLabel.getPreferredSize().getWidth()));
+        panel.add(tokenFileText, createSimpleConstraints(currentRow++, 1, 3));
 
-        panel.add(certificateLabel, createLabelConstraints(3, 0, certificateLabel.getPreferredSize().getWidth()));
-        panel.add(certificateText, createSimpleConstraints(3, 1, 3));
+        panel.add(certificateLabel, createLabelConstraints(currentRow, 0, certificateLabel.getPreferredSize().getWidth()));
+        panel.add(certificateText, createSimpleConstraints(currentRow++, 1, 3));
 
-        panel.add(secretTypeLabel, createLabelConstraints(4, 0, secretTypeLabel.getPreferredSize().getWidth()));
-        panel.add(secretType, createSimpleConstraints(4, 1, 3));
+        panel.add(namespaceLabel, createLabelConstraints(currentRow, 0, namespaceLabel.getPreferredSize().getWidth()));
+        panel.add(namespaceText, createSimpleConstraints(currentRow++, 1, 3));
 
-        panel.add(usernameKeyLabel, createLabelConstraints(5, 0, usernameKeyLabel.getPreferredSize().getWidth()));
-        panel.add(usernameKeyText, createSimpleConstraints(5, 1, 3));
+        panel.add(secretTypeLabel, createLabelConstraints(currentRow, 0, secretTypeLabel.getPreferredSize().getWidth()));
+        panel.add(secretType, createSimpleConstraints(currentRow++, 1, 3));
 
-        panel.add(passwordKeyLabel, createLabelConstraints(6, 0, passwordKeyLabel.getPreferredSize().getWidth()));
-        panel.add(passwordKeyText, createSimpleConstraints(6, 1, 3));
+        panel.add(usernameKeyLabel, createLabelConstraints(currentRow, 0, usernameKeyLabel.getPreferredSize().getWidth()));
+        panel.add(usernameKeyText, createSimpleConstraints(currentRow++, 1, 3));
+
+        panel.add(passwordKeyLabel, createLabelConstraints(currentRow, 0, passwordKeyLabel.getPreferredSize().getWidth()));
+        panel.add(passwordKeyText, createSimpleConstraints(currentRow++, 1, 3));
 
         secretType.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -118,6 +127,7 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
         config.setAdditionalProperty(PROP_ADDRESS, addressText.getText());
         config.setAdditionalProperty(PROP_TOKEN_FILE, tokenFileText.getText());
         config.setAdditionalProperty(PROP_CERTIFICATE, certificateText.getText());
+        config.setAdditionalProperty(PROP_NAMESPACE, namespaceText.getText());
         config.setAdditionalProperty(PROP_SECRET_TYPE, ((SecretType) secretType.getSelectedItem()).name());
         config.setAdditionalProperty(PROP_USERNAME_KEY, usernameKeyText.getText());
         config.setAdditionalProperty(PROP_PASSWORD_KEY, passwordKeyText.getText());
@@ -129,6 +139,7 @@ public class VaultWidget implements DatabaseAuthProvider.AuthWidget {
         secretText.setText(config.getAdditionalProperty(PROP_SECRET));
         tokenFileText.setText(config.getAdditionalProperty(PROP_TOKEN_FILE));
         certificateText.setText(config.getAdditionalProperty(PROP_CERTIFICATE));
+        namespaceText.setText(config.getAdditionalProperty(PROP_NAMESPACE));
         if (config.getAdditionalProperty(PROP_SECRET_TYPE) != null && !config.getAdditionalProperty(PROP_SECRET_TYPE).isBlank()) {
             secretType.setSelectedItem(SecretType.valueOf(config.getAdditionalProperty(PROP_SECRET_TYPE)));
         } else {
