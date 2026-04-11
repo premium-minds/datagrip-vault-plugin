@@ -189,10 +189,17 @@ public class VaultClient {
         return builder.build();
     }
 
-    private SSLContext getSSLContext(Path certificate) throws Exception {
+    static void validateCertificatePath(Path certificate) {
+        if (!Files.exists(certificate)) {
+            throw new IllegalArgumentException("Vault certificate file does not exist: " + certificate);
+        }
         if (!Files.isRegularFile(certificate)) {
             throw new IllegalArgumentException("Vault certificate path is not a file: " + certificate);
         }
+    }
+
+    private SSLContext getSSLContext(Path certificate) throws Exception {
+        validateCertificatePath(certificate);
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
