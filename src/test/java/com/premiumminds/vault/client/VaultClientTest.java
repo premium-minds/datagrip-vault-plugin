@@ -8,13 +8,16 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.DockerImageName;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -22,6 +25,34 @@ class VaultClientTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void tokenFileDirectoryReturnsExplicitError() throws Exception {
+        final var tokenDir = tempDir.resolve("token-dir");
+        Files.createDirectory(tokenDir);
+        final var loader = new DefaultVaultTokenLoader(java.util.Optional.of(tokenDir), "http://localhost:8200");
+
+        final var exception = assertThrows(IllegalArgumentException.class, loader::get);
+        assertEquals("Vault token file path is not a file: " + tokenDir, exception.getMessage());
+    }
+
+    @Test
+    void vaultConfigDirectoryReturnsExplicitError() throws Exception {
+        final var originalUserHome = System.getProperty("user.home");
+        final var vaultConfigDir = tempDir.resolve(".vault");
+        Files.createDirectory(vaultConfigDir);
+
+        try {
+            System.setProperty("user.home", tempDir.toString());
+
+            final var loader = new DefaultVaultTokenLoader(java.util.Optional.empty(), "http://localhost:8200");
+            final var exception = assertThrows(IllegalArgumentException.class, loader::get);
+
+            assertEquals("Vault config file path is not a file: " + vaultConfigDir, exception.getMessage());
+        } finally {
+            System.setProperty("user.home", originalUserHome);
+        }
+    }
 
     @Test
     void dynamicCredentials() throws Exception {
