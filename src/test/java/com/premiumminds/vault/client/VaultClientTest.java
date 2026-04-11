@@ -55,6 +55,25 @@ class VaultClientTest {
     }
 
     @Test
+    void missingCertificateReturnsExplicitError() {
+        final var missingCertificate = tempDir.resolve("missing-ca.pem");
+
+        final var exception = assertThrows(IllegalArgumentException.class,
+                () -> VaultClient.validateCertificatePath(missingCertificate));
+        assertEquals("Vault certificate file does not exist: " + missingCertificate, exception.getMessage());
+    }
+
+    @Test
+    void certificateDirectoryReturnsExplicitError() throws Exception {
+        final var certificateDir = tempDir.resolve("certificate-dir");
+        Files.createDirectory(certificateDir);
+
+        final var exception = assertThrows(IllegalArgumentException.class,
+                () -> VaultClient.validateCertificatePath(certificateDir));
+        assertEquals("Vault certificate path is not a file: " + certificateDir, exception.getMessage());
+    }
+
+    @Test
     void dynamicCredentials() throws Exception {
 
         final var network = Network.newNetwork();
