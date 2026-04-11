@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -189,6 +190,9 @@ public class VaultClient {
     }
 
     private SSLContext getSSLContext(Path certificate) throws Exception {
+        if (!Files.isRegularFile(certificate)) {
+            throw new IllegalArgumentException("Vault certificate path is not a file: " + certificate);
+        }
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
