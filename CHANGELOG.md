@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-04-14
+
+- Changelog update - `2.0.0` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/109
+- fix: Handle directory paths explicitly when loading Vault token/config/certificate files by @tdferreira in https://github.com/premium-minds/datagrip-vault-plugin/pull/110
+- Bump org.testcontainers:testcontainers from 2.0.3 to 2.0.4 by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/116
+- @tdferreira made their first contribution in https://github.com/premium-minds/datagrip-vault-plugin/pull/110
+
 ## [2.0.0] - 2026-04-10
 
 - Changelog update - `v1.3.6` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/61
@@ -86,7 +93,8 @@
 - Integration with [HashiCorp Vault](https://www.vaultproject.io/)
 - Initial scaffold created from [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template)
 
-[Unreleased]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.0...HEAD
+[Unreleased]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.1...HEAD
+[2.0.1]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/premium-minds/datagrip-vault-plugin//compare/1.3.6...2.0.0
 [1.3.6]: https://github.com/premium-minds/datagrip-vault-plugin//compare/1.3.5...1.3.6
 [1.3.5]: https://github.com/premium-minds/datagrip-vault-plugin//compare/1.3.4...1.3.5
