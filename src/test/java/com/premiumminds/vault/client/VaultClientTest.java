@@ -1,6 +1,7 @@
 package com.premiumminds.vault.client;
 
 import com.github.dockerjava.api.model.Capability;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.ExecConfig;
@@ -8,11 +9,14 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,6 +75,110 @@ class VaultClientTest {
         final var exception = assertThrows(IllegalArgumentException.class,
                 () -> VaultClient.validateCertificatePath(certificateDir));
         assertEquals("Vault certificate path is not a file: " + certificateDir, exception.getMessage());
+    }
+
+    /**
+     * When the user explicitly configures KV2 field names, missing keys should fail
+     * fast during Vault response parsing instead of returning null credentials and
+     * surfacing later as a database authentication failure.
+     */
+    @Test
+    void kv2MissingConfiguredKeyFailsFast() throws Exception {
+        final var responseBody = """
+                {
+                  "request_id": "req-missing-key",
+                  "lease_id": "",
+                  "renewable": false,
+                  "lease_duration": 0,
+                  "data": {
+                    "data": {
+                      "username": "app_user",
+                      "password": "app_password"
+                    }
+                  }
+                }
+                """;
+
+        final var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/kv/data/app", exchange -> {
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            final var bytes = responseBody.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream outputStream = exchange.getResponseBody()) {
+                outputStream.write(bytes);
+            }
+        });
+        server.start();
+
+        try {
+            final var vaultClient = VaultClient.builder()
+                    .withAddress("http://127.0.0.1:" + server.getAddress().getPort())
+                    .withTokenLoader(() -> "root")
+                    .build();
+
+            final var exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> vaultClient.getCredentials("kv/data/app", Request.kv2Request("missing_user", "password"))
+            );
+
+            assertEquals(
+                    "Vault secret 'kv/data/app' does not contain a value for key 'missing_user'. Available keys: [username, password]",
+                    exception.getMessage()
+            );
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    /**
+     * Mirrors the KV2 validation behavior for KV1 secrets. Both configurable secret
+     * formats should fail immediately when the requested key is not present in the
+     * returned secret payload.
+     */
+    @Test
+    void kv1MissingConfiguredKeyFailsFast() throws Exception {
+        final var responseBody = """
+                {
+                  "request_id": "req-missing-key",
+                  "lease_id": "",
+                  "renewable": false,
+                  "lease_duration": 0,
+                  "data": {
+                    "username": "app_user",
+                    "password": "app_password"
+                  }
+                }
+                """;
+
+        final var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/kv/data/app", exchange -> {
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            final var bytes = responseBody.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream outputStream = exchange.getResponseBody()) {
+                outputStream.write(bytes);
+            }
+        });
+        server.start();
+
+        try {
+            final var vaultClient = VaultClient.builder()
+                    .withAddress("http://127.0.0.1:" + server.getAddress().getPort())
+                    .withTokenLoader(() -> "root")
+                    .build();
+
+            final var exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> vaultClient.getCredentials("kv/data/app", Request.kv1Request("missing_user", "password"))
+            );
+
+            assertEquals(
+                    "Vault secret 'kv/data/app' does not contain a value for key 'missing_user'. Available keys: [username, password]",
+                    exception.getMessage()
+            );
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test

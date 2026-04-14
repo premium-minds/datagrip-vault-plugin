@@ -20,6 +20,7 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -151,25 +152,63 @@ public class VaultClient {
         // TODO: replace with JEP 441: Pattern Matching for switch in Java 21
         final var vaultResponse = gson.fromJson(response.body(), VaultResponse.class);
         if (credentialsRequest instanceof Request.StaticRequest) {
-            final var username = (String) vaultResponse.getData().get("username");
-            final var password = (String) vaultResponse.getData().get("password");
+            final var username = requireStringValue(vaultResponse.getData(), "username", secret, "STATIC_ROLE");
+            final var password = requireStringValue(vaultResponse.getData(), "password", secret, "STATIC_ROLE");
             return new Response(username, password);
         } else if (credentialsRequest instanceof Request.DynamicRequest) {
-            final var username = (String) vaultResponse.getData().get("username");
-            final var password = (String) vaultResponse.getData().get("password");
+            final var username = requireStringValue(vaultResponse.getData(), "username", secret, "DYNAMIC_ROLE");
+            final var password = requireStringValue(vaultResponse.getData(), "password", secret, "DYNAMIC_ROLE");
             return new ResponseWithLease(username, password, vaultResponse.getLeaseId());
         } else if (credentialsRequest instanceof Request.KV1Request kv1Request) {
-            final var username = (String) vaultResponse.getData().get(kv1Request.userKey());
-            final var password = (String) vaultResponse.getData().get(kv1Request.passKey());
+            validateConfiguredKey(kv1Request.userKey(), "username", secret, "KV1");
+            validateConfiguredKey(kv1Request.passKey(), "password", secret, "KV1");
+            final var username = requireStringValue(vaultResponse.getData(), kv1Request.userKey(), secret, "KV1");
+            final var password = requireStringValue(vaultResponse.getData(), kv1Request.passKey(), secret, "KV1");
             return new Response(username, password);
         } else if (credentialsRequest instanceof Request.KV2Request kv2Request) {
-            final var data = (Map<String, String>) vaultResponse.getData().get("data");
-            final var username = data.get(kv2Request.userKey());
-            final var password = data.get(kv2Request.passKey());
+            validateConfiguredKey(kv2Request.userKey(), "username", secret, "KV2");
+            validateConfiguredKey(kv2Request.passKey(), "password", secret, "KV2");
+            final var data = requireNestedDataMap(vaultResponse.getData(), secret, "KV2");
+            final var username = requireStringValue(data, kv2Request.userKey(), secret, "KV2");
+            final var password = requireStringValue(data, kv2Request.passKey(), secret, "KV2");
             return new Response(username, password);
         } else {
             throw new IllegalStateException("Unknown request type: " + credentialsRequest.getClass().getName());
         }
+    }
+
+    private static void validateConfiguredKey(String configuredKey, String fieldName, String secret, String secretType) {
+        if (configuredKey == null || configuredKey.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Vault secret '" + secret + "' requires a non-empty " + fieldName + " key configuration"
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> requireNestedDataMap(Map<String, Object> data, String secret, String secretType) {
+        final var nestedData = data.get("data");
+        if (!(nestedData instanceof Map<?, ?> nestedMap)) {
+            throw new IllegalArgumentException(
+                    "Vault secret '" + secret + "' does not contain the expected nested 'data' object"
+            );
+        }
+        return (Map<String, Object>) nestedMap;
+    }
+
+    private static String requireStringValue(Map<String, ?> data, String key, String secret, String secretType) {
+        final var value = data.get(key);
+        if (!(value instanceof String stringValue) || stringValue.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Vault secret '" + secret + "' does not contain a value for key '" + key
+                            + "'. Available keys: " + formatKeys(data.keySet())
+            );
+        }
+        return stringValue;
+    }
+
+    private static String formatKeys(Collection<?> keys) {
+        return keys.toString();
     }
 
     private record Response(String username, String password) implements Credentials {

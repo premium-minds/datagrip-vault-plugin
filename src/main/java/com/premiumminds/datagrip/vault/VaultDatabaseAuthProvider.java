@@ -41,6 +41,8 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     private static final String ENV_VAULT_NAMESPACE = "VAULT_NAMESPACE";
     private static final String ERROR_VAULT_ADDRESS_NOT_DEFINED = "Vault address not defined";
     private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
+    private static final String DEFAULT_USERNAME_KEY = "username";
+    private static final String DEFAULT_PASSWORD_KEY = "password";
 
     private static final Map<CacheKey, Credentials> secretsCache = new ConcurrentHashMap<>();
 
@@ -75,7 +77,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
         logger.info("Secret used: " + secret);
 
         DefaultVaultTokenLoader vaultTokenLoader = new DefaultVaultTokenLoader(
-                Optional.ofNullable(protoConnection.getConnectionPoint().getAdditionalProperty(PROP_TOKEN_FILE)).map(Path::of),
+                getTokenFile(protoConnection),
                 address
         );
 
@@ -85,7 +87,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             case KV1 -> Request.kv1Request(usernameKey, passwordKey);
             case KV2 -> Request.kv2Request(usernameKey, passwordKey);
         };
-        final var key = new CacheKey(address, secret, secretType);
+        final var key = new CacheKey(address, secret, secretType, usernameKey, passwordKey);
         logger.info("Cache key used: " + key);
 
         final var value = secretsCache.compute(key, (k, v) -> {
@@ -185,11 +187,27 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     }
 
     private @Nullable String getUsernameKey(ProtoConnection protoConnection) {
-        return protoConnection.getConnectionPoint().getAdditionalProperty(PROP_USERNAME_KEY);
+        final var configuredKey = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_USERNAME_KEY);
+        if (configuredKey == null || configuredKey.isBlank()) {
+            return DEFAULT_USERNAME_KEY;
+        }
+        return configuredKey;
     }
 
     private @Nullable String getPasswordKey(ProtoConnection protoConnection) {
-        return protoConnection.getConnectionPoint().getAdditionalProperty(PROP_PASSWORD_KEY);
+        final var configuredKey = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_PASSWORD_KEY);
+        if (configuredKey == null || configuredKey.isBlank()) {
+            return DEFAULT_PASSWORD_KEY;
+        }
+        return configuredKey;
+    }
+
+    private @NotNull Optional<Path> getTokenFile(ProtoConnection protoConnection) {
+        final var configuredTokenFile = protoConnection.getConnectionPoint().getAdditionalProperty(PROP_TOKEN_FILE);
+        if (configuredTokenFile == null || configuredTokenFile.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(Path.of(configuredTokenFile));
     }
 
 }
