@@ -1,7 +1,7 @@
 [versions]
 # libraries
 jupiter = "5.7.1"
-testcontainers = "2.0.3"
+testcontainers = "2.0.4"
 postgresql = "42.7.10"
 
 # plugins
