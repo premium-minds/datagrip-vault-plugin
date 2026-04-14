@@ -3,8 +3,8 @@
 set -euo pipefail
 
 # Usage:
-#   ./docker-postgres-vault-example.sh        # start
-#   ./docker-postgres-vault-example.sh --stop # stop vault + container
+#   ./docker-postgres-vault-kv1-example.sh        # start
+#   ./docker-postgres-vault-kv1-example.sh --stop # stop vault + container
 
 export VAULT_ADDR='http://127.0.0.1:8201'
 export VAULT_TOKEN='root'
