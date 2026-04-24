@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:18
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=rootpassword
+
+  vault:
+    image: hashicorp/vault:2.0
+    ports:
+      - "8201:8200"
+    environment:
+      # https://github.com/hashicorp/vault/issues/31919
+      - SKIP_SETCAP=true
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+
+  terraform:
+    image: hashicorp/terraform:1.14
+    entrypoint: /bin/sh
+    volumes:
+      - ./main.tf:/main.tf
+    command: "-c \"terraform init && terraform apply -auto-approve\""
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=root
+    depends_on:
+      - postgres
+      - vault
