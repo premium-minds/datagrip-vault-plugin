@@ -2,7 +2,7 @@
 # libraries
 jupiter = "5.7.1"
 testcontainers = "2.0.5"
-postgresql = "42.7.10"
+postgresql = "42.7.11"
 
 # plugins
 changelog = "2.5.0"
