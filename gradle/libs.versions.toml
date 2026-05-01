@@ -6,7 +6,7 @@ postgresql = "42.7.10"
 
 # plugins
 changelog = "2.5.0"
-intelliJPlatform = "2.13.1"
+intelliJPlatform = "2.16.0"
 kotlin = "2.3.21"
 kover = "0.9.8"
 qodana = "2026.1.0"
