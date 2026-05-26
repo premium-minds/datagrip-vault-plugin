@@ -1,6 +1,6 @@
 [versions]
 # libraries
-jupiter = "5.7.1"
+jupiter = "5.14.4"
 testcontainers = "2.0.5"
 postgresql = "42.7.11"
 
