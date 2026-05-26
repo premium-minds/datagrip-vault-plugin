@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class VaultClientTest {
 
+    public static final String HASHICORP_VAULT_IMAGE = "hashicorp/vault:2.0";
+    public static final String POSTGRES_IMAGE = "postgres:18";
     @TempDir
     Path tempDir;
 
@@ -78,7 +80,7 @@ class VaultClientTest {
 
         final var network = Network.newNetwork();
 
-        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+        final var postgres = new GenericContainer<>(DockerImageName.parse(POSTGRES_IMAGE))
                 .withNetwork(network)
                 .withNetworkAliases("postgres")
                 .withEnv("POSTGRES_USER", "root")
@@ -86,10 +88,14 @@ class VaultClientTest {
                 .withExposedPorts(5432);
         postgres.start();
 
-        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+        var vault = new GenericContainer<>(DockerImageName.parse(HASHICORP_VAULT_IMAGE))
                 .withNetwork(network)
                 .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
                 .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                // workaround for:
+                // > unable to set CAP_SETFCAP effective capability: Operation not permitted
+                // See: https://github.com/hashicorp/vault/issues/31919
+                .withEnv("SKIP_SETCAP", "true")
                 .withExposedPorts(8200);
         vault.start();
 
@@ -152,7 +158,7 @@ class VaultClientTest {
 
         final var network = Network.newNetwork();
 
-        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+        final var postgres = new GenericContainer<>(DockerImageName.parse(POSTGRES_IMAGE))
                 .withNetwork(network)
                 .withNetworkAliases("postgres")
                 .withEnv("POSTGRES_USER", "root")
@@ -160,10 +166,14 @@ class VaultClientTest {
                 .withExposedPorts(5432);
         postgres.start();
 
-        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+        var vault = new GenericContainer<>(DockerImageName.parse(HASHICORP_VAULT_IMAGE))
                 .withNetwork(network)
                 .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
                 .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                // workaround for:
+                // > unable to set CAP_SETFCAP effective capability: Operation not permitted
+                // See: https://github.com/hashicorp/vault/issues/31919
+                .withEnv("SKIP_SETCAP", "true")
                 .withExposedPorts(8200);
         vault.start();
 
@@ -220,7 +230,7 @@ class VaultClientTest {
 
         final var network = Network.newNetwork();
 
-        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+        final var postgres = new GenericContainer<>(DockerImageName.parse(POSTGRES_IMAGE))
                 .withNetwork(network)
                 .withNetworkAliases("postgres")
                 .withEnv("POSTGRES_USER", "root")
@@ -228,10 +238,14 @@ class VaultClientTest {
                 .withExposedPorts(5432);
         postgres.start();
 
-        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+        var vault = new GenericContainer<>(DockerImageName.parse(HASHICORP_VAULT_IMAGE))
                 .withNetwork(network)
                 .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
                 .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                // workaround for:
+                // > unable to set CAP_SETFCAP effective capability: Operation not permitted
+                // See: https://github.com/hashicorp/vault/issues/31919
+                .withEnv("SKIP_SETCAP", "true")
                 .withExposedPorts(8200);
         vault.start();
 
@@ -278,7 +292,7 @@ class VaultClientTest {
 
         final var network = Network.newNetwork();
 
-        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+        final var postgres = new GenericContainer<>(DockerImageName.parse(POSTGRES_IMAGE))
                 .withNetwork(network)
                 .withNetworkAliases("postgres")
                 .withEnv("POSTGRES_USER", "root")
@@ -286,10 +300,14 @@ class VaultClientTest {
                 .withExposedPorts(5432);
         postgres.start();
 
-        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+        var vault = new GenericContainer<>(DockerImageName.parse(HASHICORP_VAULT_IMAGE))
                 .withNetwork(network)
                 .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
                 .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                // workaround for:
+                // > unable to set CAP_SETFCAP effective capability: Operation not permitted
+                // See: https://github.com/hashicorp/vault/issues/31919
+                .withEnv("SKIP_SETCAP", "true")
                 .withExposedPorts(8200);
         vault.start();
 
@@ -336,7 +354,7 @@ class VaultClientTest {
 
         final var network = Network.newNetwork();
 
-        final var postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
+        final var postgres = new GenericContainer<>(DockerImageName.parse(POSTGRES_IMAGE))
                 .withNetwork(network)
                 .withNetworkAliases("postgres")
                 .withEnv("POSTGRES_USER", "root")
@@ -344,11 +362,15 @@ class VaultClientTest {
                 .withExposedPorts(5432);
         postgres.start();
 
-        var vault = new GenericContainer<>(DockerImageName.parse("hashicorp/vault"))
+        var vault = new GenericContainer<>(DockerImageName.parse(HASHICORP_VAULT_IMAGE))
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCapAdd(Capability.IPC_LOCK))
                 .withNetwork(network)
                 .withEnv("VAULT_DEV_ROOT_TOKEN_ID", "root")
                 .withEnv("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200")
+                // workaround for:
+                // > unable to set CAP_SETFCAP effective capability: Operation not permitted
+                // See: https://github.com/hashicorp/vault/issues/31919
+                .withEnv("SKIP_SETCAP", "true")
                 .withCommand("server -dev-tls -dev-tls-cert-dir=/tmp/")
                 .withExposedPorts(8200);
         vault.start();
