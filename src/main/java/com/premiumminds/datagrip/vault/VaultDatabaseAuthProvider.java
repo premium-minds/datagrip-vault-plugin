@@ -1,11 +1,9 @@
 package com.premiumminds.datagrip.vault;
 
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.intellij.database.access.DatabaseCredentials;
 import com.intellij.database.dataSource.DatabaseAuthProvider;
@@ -13,9 +11,7 @@ import com.intellij.database.dataSource.DatabaseConnectionConfig;
 import com.intellij.database.dataSource.DatabaseConnectionPoint;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.premiumminds.vault.client.Credentials;
 import com.premiumminds.vault.client.DefaultVaultTokenLoader;
-import com.premiumminds.vault.client.Lease;
 import com.premiumminds.vault.client.Request;
 import com.premiumminds.vault.client.VaultClient;
 import org.jetbrains.annotations.Nls;
@@ -41,8 +37,6 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
     private static final String ENV_VAULT_NAMESPACE = "VAULT_NAMESPACE";
     private static final String ERROR_VAULT_ADDRESS_NOT_DEFINED = "Vault address not defined";
     private static final String ERROR_VAULT_SECRET_NOT_DEFINED = "Vault secret not defined";
-
-    private static final Map<CacheKey, Credentials> secretsCache = new ConcurrentHashMap<>();
 
     @Override
     public @NonNls @NotNull String getId() {
@@ -85,37 +79,21 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             case KV1 -> Request.kv1Request(usernameKey, passwordKey);
             case KV2 -> Request.kv2Request(usernameKey, passwordKey);
         };
-        final var key = new CacheKey(address, secret, secretType);
-        logger.info("Cache key used: " + key);
 
-        final var value = secretsCache.compute(key, (k, v) -> {
-            final var vaultClient = VaultClient.builder()
-                    .withAddress(address)
-                    .withTokenLoader(vaultTokenLoader)
-                    .withCertificate(certificate)
-                    .withNamespace(namespace)
-                    .build();
-            try {
-                if (v == null) {
-                    return vaultClient.getCredentials(secret, credentialsRequest);
-                } else {
-                    if (v instanceof Lease lease) {
-                        final var leaseOpt = vaultClient.getLease(lease.leaseId());
-                        if (leaseOpt.isEmpty()) {
-                            return vaultClient.getCredentials(secret, credentialsRequest);
-                        }
-                    }
-                }
-                return v;
-            } catch (Exception e) {
-                throw new RuntimeException("Problem connecting to Vault: " + e.getMessage(), e);
-            }
-        });
+        final var vaultClient = VaultClient.builder()
+                .address(address)
+                .tokenLoader(vaultTokenLoader)
+                .certificate(certificate)
+                .namespace(namespace)
+                .cache(true)
+                .build();
 
-        logger.info("Username used " + value.username());
+        final var credentials = vaultClient.getCredentials(secret, credentialsRequest);
 
-        protoConnection.getConnectionProperties().put("user", value.username());
-        protoConnection.getConnectionProperties().put("password", value.password());
+        logger.info("Username used " + credentials.username());
+
+        protoConnection.getConnectionProperties().put("user", credentials.username());
+        protoConnection.getConnectionProperties().put("password", credentials.password());
 
         return CompletableFuture.completedFuture(protoConnection);
     }
