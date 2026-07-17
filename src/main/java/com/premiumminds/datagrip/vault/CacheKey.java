@@ -1,5 +1,7 @@
 package com.premiumminds.datagrip.vault;
 
-public record CacheKey(String address, String secret, SecretType secretType) {
+import com.premiumminds.vault.client.Request;
+
+public record CacheKey(String address, String secret, SecretType secretType, Request request) {
 
 }

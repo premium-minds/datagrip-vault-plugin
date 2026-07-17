@@ -85,7 +85,7 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
             case KV1 -> Request.kv1Request(usernameKey, passwordKey);
             case KV2 -> Request.kv2Request(usernameKey, passwordKey);
         };
-        final var key = new CacheKey(address, secret, secretType);
+        final var key = new CacheKey(address, secret, secretType, credentialsRequest);
         logger.info("Cache key used: " + key);
 
         final var value = secretsCache.compute(key, (k, v) -> {
@@ -97,7 +97,12 @@ public class VaultDatabaseAuthProvider implements DatabaseAuthProvider {
                     .build();
             try {
                 if (v == null) {
-                    return vaultClient.getCredentials(secret, credentialsRequest);
+                    logger.info(
+                            String.format("Fetching secret with path '%s' and type '%s' from Vault '%s'",
+                                    k.secret(),
+                                    k.secretType(),
+                                    k.address()));
+                    return vaultClient.getCredentials(secret, k.request());
                 } else {
                     if (v instanceof Lease lease) {
                         final var leaseOpt = vaultClient.getLease(lease.leaseId());
