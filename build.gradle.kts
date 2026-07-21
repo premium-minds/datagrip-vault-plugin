@@ -17,7 +17,7 @@ version = providers.gradleProperty("pluginVersion").get()
 
 // Set the JVM language level used to build the project.
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(25)
 }
 
 // Configure project's dependencies
@@ -111,10 +111,7 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2022.2")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2023.1")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2024.1")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.1")
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2")
         }
         freeArgs = listOf("-mute", "TemplateWordInPluginName")
     }
