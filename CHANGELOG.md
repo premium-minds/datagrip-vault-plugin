@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-07-21
+
+- Changelog update - `2.0.1` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/117
+- Adds test workaround for vault v2 by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/130
+- Updates from next branch by @froque in https://github.com/premium-minds/datagrip-vault-plugin/pull/147
+- Refactor vaultclient cache by @froque https://github.com/premium-minds/datagrip-vault-plugin/pull/146
+
 ## [2.0.1] - 2026-04-14
 
 - Changelog update - `2.0.0` by @github-actions[bot] in https://github.com/premium-minds/datagrip-vault-plugin/pull/109
@@ -93,7 +100,8 @@
 - Integration with [HashiCorp Vault](https://www.vaultproject.io/)
 - Initial scaffold created from [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template)
 
-[Unreleased]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.1...HEAD
+[Unreleased]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.2...HEAD
+[2.0.2]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/premium-minds/datagrip-vault-plugin//compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/premium-minds/datagrip-vault-plugin//compare/1.3.6...2.0.0
 [1.3.6]: https://github.com/premium-minds/datagrip-vault-plugin//compare/1.3.5...1.3.6
