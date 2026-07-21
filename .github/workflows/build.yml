@@ -109,7 +109,7 @@ jobs:
 
       # Run tests
       - name: Run Tests
-        run: ./gradlew check
+        run: ./gradlew check --info --stacktrace
 
       # Collect Tests Result of failed tests
       - name: Collect Tests Result
