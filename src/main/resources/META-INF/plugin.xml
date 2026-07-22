@@ -3,6 +3,15 @@
     <id>com.premiumminds.datagripvaultplugin</id>
     <name>Datagrip-Vault</name>
     <vendor>premium-minds</vendor>
+    <description><![CDATA[
+        <p>This plugin provides database credentials using <a href="https://developer.hashicorp.com/vault">Vault</a> <a href="https://www.vaultproject.io/docs/secrets/databases">Database secrets</a> and <a href="https://developer.hashicorp.com/vault/docs/secrets/kv">KV secrets</a> engines.</p>
+
+        <p>Vault login is not handled by this plugin.</p>
+
+        <p>You should manually log in into Vault, which will, using the default <a href="https://www.vaultproject.io/docs/commands/token-helper">Token Helper</a>, create a Vault token file in <code>$HOME/.vault-token</code>. Check another <a href="https://github.com/joemiller/vault-token-helper">Vault Token Helper</a> with support for native secret storage on macOS, Linux, and Windows.</p>
+
+        <p>This plugin will cache credentials in memory until it expires.</p>
+    ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.database</depends>
