@@ -17,7 +17,7 @@ version = providers.gradleProperty("pluginVersion").get()
 
 // Set the JVM language level used to build the project.
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(25)
 }
 
 // Configure project's dependencies
@@ -40,6 +40,8 @@ dependencies {
     testImplementation(libs.jupiter)
     testImplementation(libs.postgresql)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("junit:junit:4.13.2")
+
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
@@ -111,10 +113,7 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2022.2")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2023.1")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2024.1")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.1")
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2")
         }
         freeArgs = listOf("-mute", "TemplateWordInPluginName")
     }

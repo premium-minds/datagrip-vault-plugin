@@ -48,7 +48,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 17
+          java-version: 21
 
       # Setup Gradle
       - name: Setup Gradle
@@ -99,7 +99,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
 
       # Setup Gradle
       - name: Setup Gradle
@@ -107,9 +107,9 @@ jobs:
         with:
           cache-read-only: true
 
-      ## Run tests
-      #- name: Run Tests
-      #  run: ./gradlew check
+      # Run tests
+      - name: Run Tests
+        run: ./gradlew check --info --stacktrace
 
       # Collect Tests Result of failed tests
       - name: Collect Tests Result
@@ -156,7 +156,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
 
       # Run Qodana inspections
       - name: Qodana - Code Inspection
@@ -227,7 +227,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
 
       # Setup Gradle
       - name: Setup Gradle
